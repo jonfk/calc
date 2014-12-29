@@ -1,13 +1,23 @@
 calc
 ====
-My toy calculator language
+My toy calculator language. The lexer was inspired by the
+[text/template/parse package](http://golang.org/pkg/text/template/parse/)
+from the standard library and this talk by Rob Pike:
+[Lexical Scanning in Go](https://www.youtube.com/watch?v=HxaD_trXwRE)
 
-TODO:
+###TODO:
 - Split number into NUM, FLOAT, HEX, EXPONENT in Lexer (or parser?)
 
-Identifiers can be alphanumeric with an underscore '_'
+###Notes:
+- Identifiers can be alphanumeric with an underscore '_'
 
-Grammar in BNF:
+##Grammar in BNF:
+
+    expr ::= num_expr
+           | bool_expr
+           | if_expr
+
+    if_expr ::= IF bool_expr THEN expr ELSE expr END
 
     num_expr ::= NUMBER
                | num_expr ADD num_expr
@@ -15,7 +25,6 @@ Grammar in BNF:
                | num_expr MUL num_expr
                | num_expr QUO num_expr
                | num_expr REM num_expr
-
 
     bool_expr ::= BOOL
                 | NOT bool_expr
@@ -27,3 +36,5 @@ Grammar in BNF:
                 | num_expr NEQ num_expr
                 | num_expr LEQ num_expr
                 | num_expr GEQ num_expr
+
+    let_expr ::= LET IDENTIFIER ASSIGN expr END
