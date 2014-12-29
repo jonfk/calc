@@ -43,7 +43,7 @@ const (
 	ERROR        TokenType = iota // error occurred; value is text of error
 	BOOL                         // boolean constant
 	EOF
-	NEWLINE                      // '\n'
+	// NEWLINE                      // '\n' ignored for now
 	LINECOMMENT                  // // ..... includes symbol
 	BLOCKCOMMENT                 // /* block comment includes surrounding symbols*/
 	LEFTPAREN  // '('
@@ -57,6 +57,7 @@ const (
 	END      // end keyword
 	IF       // if keyword
 	THEN     // then keyword
+	LET      // let keyword
 
 	OPERATOR
 	// Operators and delimiters
@@ -87,6 +88,7 @@ var key = map[string]TokenType{
 	"end":      END,
 	"if":       IF,
 	"then":     THEN,
+	"let":      LET,
 	"+":        ADD,
 	"-":        SUB,
 	"*":        MUL,
@@ -262,7 +264,8 @@ func lexEndOfLine(l *Lexer) stateFn {
 	for isEndOfLine(l.peek()) {
 		l.next()
 	}
-	l.emit(NEWLINE)
+	// l.emit(NEWLINE)
+	l.ignore()
 	return lexStart
 }
 
@@ -324,9 +327,9 @@ Loop:
 		default:
 			l.backup()
 			word := l.input[l.start:l.pos]
-			if !l.atTerminator() {
-				return l.errorf("bad character %#U", r)
-			}
+			// if !l.atTerminator() {
+			// 	return l.errorf("bad character %#U", r)
+			// }
 			switch {
 			case key[word] > KEYWORD:
 				l.emit(key[word])
