@@ -16,6 +16,7 @@ from the standard library and this talk by Rob Pike:
     expr ::= num_expr
            | bool_expr
            | if_expr
+           | LPAREN expr RPAREN
 
     if_expr ::= IF bool_expr THEN expr ELSE expr END
 
@@ -37,4 +38,7 @@ from the standard library and this talk by Rob Pike:
                 | num_expr LEQ num_expr
                 | num_expr GEQ num_expr
 
-    let_expr ::= LET IDENTIFIER ASSIGN expr END
+    ident_stmt ::= IDENTIFIER
+                 | ident_stmt IDENTIFIER
+
+    let_expr ::= LET ident_stmt ASSIGN expr END
