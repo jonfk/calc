@@ -16,12 +16,13 @@ type Parser struct {
 	input  string      // the string being scanned
 	pos    int         // the position of token in Items; pos == -1 when Items is nil
 	Items  []lex.Token // the unreduced items received from the lexer
+	lastToken lex.Token // Used for error and debug messages
 
 	Lexer  *lex.Lexer  // the lexer
 
 	File   *ast.File    // the file being parsed
 	topScope *ast.Scope // may be nil if topmost scope
-	lastNode ast.Node   // last node parsed
+	lastNode ast.Node   // last node parsed ??? currently only used by let. Is it necessary?
 
 	pDepth  *ParenDepth  // paren depth for parsing expressions
 }
@@ -48,9 +49,9 @@ func (p *Parser) next() lex.Token {
 	}
 	p.pos += 1
 	if p.pos >= len(p.Items) {
-		fmt.Println("Not possible next")
-		// p.getItem()
+		p.errorf("Internal error in next(): parser.pos moving out of bounds of lexed tokens\n")
 	}
+	p.lastToken = p.Items[p.pos]
 	return p.Items[p.pos]
 }
 
@@ -62,20 +63,10 @@ func (p *Parser) nextNonNewline() lex.Token {
 	return t
 }
 
-// getItem calls nextItem on the lexer and adds the item to Items.
-func (p *Parser) getItem() {
-	item := p.Lexer.NextItem()
-	p.Items = append(p.Items, item)
-	if item.Typ == lex.EOF {
-		// p.endLex = true
-	}
-}
-
 // peek returns the k forward token in items but does not move the pos.
 func (p *Parser) peek(k int) lex.Token {
 	for (p.pos + k) >= len(p.Items) {
-		// p.getItem()
-		fmt.Println("Not possible peek")
+		p.errorf("Internal error in peek(): parser.pos moving out of bounds of lexed tokens\n")
 	}
 	return p.Items[p.pos+k]
 }
@@ -84,10 +75,13 @@ func (p *Parser) peek(k int) lex.Token {
 // Can only be called as many times as there are unreduced tokens in Items
 // return error if there aren't enough tokens in Items
 func (p *Parser) backup() error {
-	if p.pos == -1 {
-		return fmt.Errorf("backup: Cannot backup anymore pos is at start of Items")
+	if p.pos <= -1 {
+		p.errorf("Internal error in backup: Cannot backup anymore pos is at start of Items\n")
 	}
 	p.pos -= 1
+	// if p.pos != -1 {
+	// 	p.lastToken = p.Items[p.pos]
+	// }
 	return nil
 }
 
@@ -195,7 +189,7 @@ func parseFile(p *Parser) {
 	// 	p.lastNode = assign
 	// 	parseLet(p)
 	default:
-		p.errorf("Invalid statement at %v", t.Pos)
+		p.errorf("Invalid statement at line %v:%v with token: %s\n",p.lineNumber(), t.Pos, t.Val)
 	}
 }
 
@@ -211,7 +205,7 @@ func parseIdent(p *Parser) *ast.Ident {
 		}
 		return ident
 	default:
-		p.errorf("Invalid expression at %d expected an identifier but found %v", p.lineNumber(), t.Val)
+		p.errorf("Invalid expression at %d:%d expected an identifier but found %v\n", p.lineNumber(), t.Pos, t.Val)
 	}
 	return nil
 }
@@ -231,7 +225,7 @@ func parseLet(p *Parser) {
 		}
 		assign.Rhs = parseExpr(p, nil)
 	default:
-		p.errorf("Invalid let expression at %d", p.lineNumber())
+		p.errorf("Invalid let expression at line %d:%d with token : %s\n", p.lineNumber(), t.Pos, t.Val)
 	}
 }
 
@@ -255,7 +249,7 @@ func parseExpr(p *Parser, expr ast.Expr) ast.Expr {
 				paren.Rparen = t
 				return expr
 			} else {
-				p.errorf("Invalid expression at line %d in %v", p.lineNumber(), t.Val)
+				p.errorf("Invalid expression at line %d:%d with token : %v\n", p.lineNumber(), t.Pos, t.Val)
 			}
 		}
 	case *ast.ParenExpr:
@@ -265,7 +259,7 @@ func parseExpr(p *Parser, expr ast.Expr) ast.Expr {
 	case *ast.BinaryExpr:
 		return parseBinaryExpr(p, expr.(*ast.BinaryExpr))
 	default:
-		p.errorf("Invalid expression at line %d. Unknown expression", p.lineNumber())
+		p.errorf("Internal error unknown expression at line %d:%d after token : %s\n", p.lineNumber(), p.lastToken.Pos, p.lastToken.Val)
 		return nil
 	}
 	return nil
@@ -287,7 +281,7 @@ func  parseStartExpr(p *Parser) ast.Expr {
 		paren := &ast.ParenExpr{Lparen:t}
 		return parseExpr(p, paren)
 	default:
-		p.errorf("Invalid start of expression at line %d in %v", p.lineNumber(), t.Val)
+		p.errorf("Invalid start of expression at line %d:%d with token : %v\n", p.lineNumber(), t.Pos, t.Val)
 	}
 	return nil
 }
@@ -300,6 +294,10 @@ func atTerminator(t lex.Token) bool {
 }
 
 func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
+	// Add 3
+	// if expr.X == nil && expr.Rparen.Val == ""
+	// else if expr.X != nil && expr.Rparen.Val == ""
+	// else if expr.X != nil && expr.Rparen.Val == ")"
 	switch t := p.nextNonNewline(); {
 	case t.Typ == lex.IDENTIFIER:
 		p.backup()
@@ -323,11 +321,11 @@ func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
 		expr.Rparen = t
 		paren := p.pDepth.pop()
 		if paren != expr {
-			p.errorf("Internal error in parseExpr case ParenExpr at %d in %v", p.lineNumber(), t.Val)
+			p.errorf("Internal error in parseExpr case ParenExpr at line %d:%d with token : %v\n", p.lineNumber(), t.Pos, t.Val)
 		}
 		return expr
 	default:
-		p.errorf("Invalid expression at %d in %v", p.lineNumber(), t.Val)
+		p.errorf("Invalid expression at line %d:%d with token : %v\n", p.lineNumber(), t.Pos, t.Val)
 	}
 	return nil
 }
@@ -354,7 +352,7 @@ func parseUnaryExpr(p *Parser, expr *ast.UnaryExpr) ast.Expr {
 			expr.X = parseExpr(p, paren)
 			return expr
 		default:
-			p.errorf("Invalid unary expression at line %d in %v", p.lineNumber(), t.Val)
+			p.errorf("Invalid unary expression at line %d:%d with token %v\n", p.lineNumber(), t.Pos, t.Val)
 		}
 	} else {
 		switch t:= p.next(); {
@@ -374,7 +372,7 @@ func parseUnaryExpr(p *Parser, expr *ast.UnaryExpr) ast.Expr {
 				return parseExpr(p, binary)
 			}
 		default:
-			p.errorf("Invalid expression at line %d", p.lineNumber())
+			p.errorf("Invalid expression at line %d:%d with token : %s\n", p.lineNumber(), t.Pos, t.Val)
 		}
 	}
 	return nil
@@ -402,7 +400,7 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 			expr.Y = parseExpr(p, paren)
 			return expr
 		default:
-			p.errorf("Invalid expression at line %d in %v", p.lineNumber(), t.Val)
+			p.errorf("Invalid expression at line %d:%d with token : %v\n", p.lineNumber(), t.Pos, t.Val)
 		}
 	} else {
 		switch t := p.next(); {
@@ -418,7 +416,7 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 				return parseExpr(p, binary)
 			}
 		default:
-			p.errorf("Invalid binary expression at line %d in %v", p.lineNumber(), t.Val)
+			p.errorf("Invalid binary expression at line %d:%d with token : %v\n", p.lineNumber(), t.Pos, t.Val)
 		}
 	}
 	return nil
