@@ -7,119 +7,20 @@ import (
 	"unicode/utf8"
 )
 
-// Pos represents a byte position in the original input text
-type Pos int
-
-func (p Pos) Position() Pos {
-	return p
-}
-
-// token represents a token or text string returned from the scanner.
-type Token struct {
-	Typ TokenType // The type of this token.
-	Pos Pos      // The starting position, in bytes, of this item in the input string.
-	Val string   // The value of this item.
-}
-
-func (t Token) String() string {
-	switch {
-	case t.Typ == EOF:
-		return "EOF"
-	case t.Typ == ERROR:
-		return t.Val
-	case t.Typ > KEYWORD && t.Typ < OPERATOR:
-		return fmt.Sprintf("<%s>", t.Val)
-	case t.Typ > OPERATOR:
-		return fmt.Sprintf("[%s]", t.Val)
-	case len(t.Val) > 10:
-		return fmt.Sprintf("%.10q...", t.Val)
-	}
-	return fmt.Sprintf("%q", t.Val)
-}
-
-type TokenType int
-
-const (
-	ERROR        TokenType = iota // error occurred; value is text of error
-	BOOL                         // boolean constant
-	EOF
-	// NEWLINE                      // '\n' ignored for now
-	LINECOMMENT                  // // ..... includes symbol
-	BLOCKCOMMENT                 // /* block comment includes surrounding symbols*/
-	LEFTPAREN  // '('
-	NUMBER     // simple number, including imaginary
-	COMPLEX                      // complex constant (1+2i); imaginary is just a number
-	RIGHTPAREN // ')'
-	IDENTIFIER // alphanumeric identifier not starting with '.'
-	// Keywords appear after all the rest.
-	KEYWORD  // used only to delimit the keywords
-	ELSE     // else keyword
-	END      // end keyword
-	IF       // if keyword
-	THEN     // then keyword
-	LET      // let keyword
-
-	OPERATOR
-	// Operators and delimiters
-	ADD // +
-	SUB // -
-	MUL // *
-	QUO // /
-	REM // %
-
-	LAND  // &&
-	LOR   // ||
-
-	EQL    // ==
-	LSS    // <
-	GTR    // >
-	ASSIGN // =
-	NOT    // !
-
-	NEQ      // !=
-	LEQ      // <=
-	GEQ      // >=
-)
-
-const eof = -1
-
-var key = map[string]TokenType{
-	"else":     ELSE,
-	"end":      END,
-	"if":       IF,
-	"then":     THEN,
-	"let":      LET,
-	"+":        ADD,
-	"-":        SUB,
-	"*":        MUL,
-	"/":        QUO,
-	"%":        REM,
-	"&&":     LAND,
-	"||":      LOR,
-	"==":       EQL,
-	"<":        LSS,
-	">":        GTR,
-	"=":        ASSIGN,
-	"!":        NOT,
-	"!=":       NEQ,
-	"<=":       LEQ,
-	">=":       GEQ,
-}
-
 // stateFn represents the state of the scanner as a function that returns the next state.
 type stateFn func(*Lexer) stateFn
 
 // lexer holds the state of the scanner.
 type Lexer struct {
-	name       string    // the name of the input; used only for error reports
-	input      string    // the string being scanned
-	state      stateFn   // the next lexing function to enter
-	pos        Pos       // current position in the input
-	start      Pos       // start position of this item
-	width      Pos       // width of last rune read from input
-	lastPos    Pos       // position of most recent item returned by nextItem
+	name       string     // the name of the input; used only for error reports
+	input      string     // the string being scanned
+	state      stateFn    // the next lexing function to enter
+	pos        Pos        // current position in the input
+	start      Pos        // start position of this item
+	width      Pos        // width of last rune read from input
+	lastPos    Pos        // position of most recent item returned by nextItem
 	items      chan Token // channel of scanned items
-	parenDepth int       // nesting depth of ( ) exprs
+	parenDepth int        // nesting depth of ( ) exprs
 }
 
 // next returns the next rune in the input.
@@ -197,9 +98,9 @@ func (l *Lexer) NextItem() Token {
 // lex creates a new scanner for the input string.
 func Lex(name, input string) *Lexer {
 	l := &Lexer{
-		name:       name,
-		input:      input,
-		items:      make(chan Token),
+		name:  name,
+		input: input,
+		items: make(chan Token),
 	}
 	go l.run()
 	return l
@@ -219,6 +120,8 @@ func lexStart(l *Lexer) stateFn {
 	case r == eof:
 		l.emit(EOF)
 		return nil
+	case r == ';':
+		return lexSemiColon
 	case isSpace(r):
 		return lexSpace
 	case isEndOfLine(r):
@@ -248,7 +151,11 @@ func lexStart(l *Lexer) stateFn {
 	}
 }
 
-
+// lexSemiColon scans a semicolon
+func lexSemiColon(l *Lexer) stateFn {
+	l.emit(SEMICOLON)
+	return lexStart
+}
 // lexSpace scans a run of space characters.
 // One space has already been seen.
 func lexSpace(l *Lexer) stateFn {
@@ -264,41 +171,58 @@ func lexEndOfLine(l *Lexer) stateFn {
 	for isEndOfLine(l.peek()) {
 		l.next()
 	}
-	// l.emit(NEWLINE)
-	l.ignore()
+	l.emit(NEWLINE)
+	//l.ignore()
 	return lexStart
 }
 
-// lexNumber scans a number: decimal, octal, hex, float, or imaginary. This
-// isn't a perfect number scanner - for instance it accepts "." and "0x0.2"
-// and "089" - but when it's wrong the input is invalid and the parser (via
-// strconv) will notice.
+// lexNumber scans a number: decimal, octal, hex or float
+// octals are preceded by 0c
+// hexadecimals by 0x
+// binary by 0b
+// otherwise interpreted as base 10
+// floats can use scientific notation with e such as 1.5e1 == 15
+// floats can only be base 10 to simplify arithmetic
+//
 func lexNumber(l *Lexer) stateFn {
-	if !l.scanNumber() {
-		return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
-	}
 	mark := l.pos
-	if sign := l.peek(); sign == '+' || sign == '-' {
-		// Complex: 1+2i. No spaces, must end in 'i'.
-		if !l.scanNumber() || l.input[l.pos-1] != 'i' {
-			l.pos = mark
-			l.emit(NUMBER)
-			return lexStart
-			//return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
+	if !l.scanInt() {
+		l.pos = mark
+		if !l.scanFloat() {
+			return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
 		}
-		l.emit(COMPLEX)
-	} else {
-		l.emit(NUMBER)
+		l.emit(FLOAT)
+		return lexStart
 	}
+	l.emit(INT)
 	return lexStart
 }
 
-func (l *Lexer) scanNumber() bool {
+func (l *Lexer) scanInt() bool {
 	// Is it hex?
 	digits := "0123456789"
-	if l.accept("0") && l.accept("xX") {
-		digits = "0123456789abcdefABCDEF"
+	if l.accept("0") {
+		switch r := l.next(); {
+		case r == 'x' || r == 'X':
+			digits = "0123456789abcdefABCDEF"
+		case r == 'c' || r == 'C':
+			digits = "01234567"
+		case r == 'b' || r == 'B':
+			digits = "01"
+		default:
+			l.backup()
+		}
 	}
+	l.acceptRun(digits)
+	if isAlphaNumeric(l.peek()) || l.peek() == '.' {
+		l.next()
+		return false
+	}
+	return true
+}
+
+func (l *Lexer) scanFloat() bool {
+	digits := "0123456789"
 	l.acceptRun(digits)
 	if l.accept(".") {
 		l.acceptRun(digits)
@@ -307,9 +231,6 @@ func (l *Lexer) scanNumber() bool {
 		l.accept("+-")
 		l.acceptRun("0123456789")
 	}
-	// Is it imaginary?
-	l.accept("i")
-	// Next thing mustn't be alphanumeric.
 	if isAlphaNumeric(l.peek()) {
 		l.next()
 		return false
@@ -422,7 +343,7 @@ Loop:
 			// l.next()
 			word := l.input[l.start:l.pos]
 			switch {
-			case strings.Index(word, "*/")== len(word)-len("*/"):
+			case strings.Index(word, "*/") == len(word)-len("*/"):
 				l.emit(BLOCKCOMMENT)
 			default:
 				return l.errorf("error in  block comment at %#U", r)
@@ -434,8 +355,8 @@ Loop:
 }
 
 func (l *Lexer) atEndBlockComment() bool {
-	word := l.input[l.pos-2:l.pos]
-	if strings.Index(word, "*/")== len(word)-len("*/") {
+	word := l.input[l.pos-2 : l.pos]
+	if strings.Index(word, "*/") == len(word)-len("*/") {
 		return true
 	}
 	return false
