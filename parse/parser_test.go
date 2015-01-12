@@ -87,6 +87,39 @@ func TestSimpleParen(t *testing.T) {
 	}
 }
 
+func TestCompositeParen(t *testing.T) {
+	input :=
+		`((4)+(4))`
+	parser := Parse("TestCompositeParen", input)
+
+	output := parser.File
+	nodeList := []ast.Node{
+		&ast.ParenExpr{
+			Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
+			Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+			X: &ast.BinaryExpr{
+				X: &ast.ParenExpr{
+					Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
+					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+					X: &ast.BasicLit{ Tok:lex.Token{Typ:lex.INT, Val:"4"}},
+				},
+				Op:lex.Token{Typ:lex.ADD, Val:"+"},
+				Y: &ast.ParenExpr{
+					Lparen: lex.Token{Typ:lex.LEFTPAREN, Val:"("},
+					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+					X: &ast.BasicLit{ Tok: lex.Token{Typ:lex.INT, Val:"4"}},
+				},
+			},
+		},
+	}
+	expected := &ast.File{
+		List: nodeList,
+	}
+	if !ast.Equals(parser.File, expected) {
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+	}
+}
+
 func TestMultiExpr(t *testing.T) {
 	input :=
 		`
