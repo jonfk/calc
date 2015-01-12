@@ -60,7 +60,5 @@ also inspired by go/parser and text/template/parse.
 ###Dependencies
 Depedencies are kept to a minimum.
 - https://github.com/davecgh/go-spew
-```bash
-# Used for testing and debugging
-go get github.com/davecgh/go-spew/spew
-```
+    Used for testing and debugging
+`go get github.com/davecgh/go-spew/spew`
