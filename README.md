@@ -61,5 +61,5 @@ also inspired by go/parser and text/template/parse.
 Depedencies are kept to a minimum.
 - https://github.com/davecgh/go-spew
 
-    # Used for testing and debugging
+    \# Used for testing and debugging
     go get github.com/davecgh/go-spew/spew
