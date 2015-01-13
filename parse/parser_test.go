@@ -9,13 +9,8 @@ import (
 )
 
 func TestSimpleBinaryAdd(t *testing.T) {
-	input :=
-`4+4`
+	input := `4+4`
 	parser := Parse("TestSimpleBinaryAdd", input)
-	// fmt.Println("parser")
-	// spew.Dump(parser)
-	// fmt.Println("\ntree")
-	// spew.Dump(parser.File)
 
 	output := parser.File
 	nodeList := []ast.Node{
@@ -39,8 +34,7 @@ func TestSimpleBinaryAdd(t *testing.T) {
 }
 
 func TestSimpleUnary(t *testing.T) {
-	input :=
-`-2`
+	input := `-2`
 	parser := Parse("TestSimpleUnary", input)
 
 	output := parser.File
@@ -59,8 +53,7 @@ func TestSimpleUnary(t *testing.T) {
 }
 
 func TestSimpleParen(t *testing.T) {
-	input :=
-		`4+(4)`
+	input := `4+(4)`
 	parser := Parse("TestSimpleParen", input)
 
 	output := parser.File
@@ -88,8 +81,7 @@ func TestSimpleParen(t *testing.T) {
 }
 
 func TestCompositeParen(t *testing.T) {
-	input :=
-		`((4)+(4))`
+	input := `(( 4 ) + ( 4 ))`
 	parser := Parse("TestCompositeParen", input)
 
 	output := parser.File
@@ -124,7 +116,7 @@ func TestMultiExpr(t *testing.T) {
 	input :=
 		`
 4+(4)
-4+4
+4*4
 `
 	parser := Parse("TestMultipleExpr", input)
 
@@ -145,12 +137,9 @@ func TestMultiExpr(t *testing.T) {
 		},
 		&ast.BinaryExpr{
 			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
-			Op:lex.Token{Typ:lex.ADD, Val:"+"},
+			Op:lex.Token{Typ:lex.MUL, Val:"*"},
 			Y: &ast.BasicLit{
-				Tok: lex.Token{
-					Typ:lex.INT,
-					Val:"4",
-				},
+				Tok: lex.Token{ Typ:lex.INT, Val:"4"},
 			},
 		},
 	}
