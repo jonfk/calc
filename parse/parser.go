@@ -189,7 +189,7 @@ func parseFile(p *Parser) {
 	// 	p.lastNode = assign
 	// 	parseLet(p)
 	default:
-		p.errorf("Invalid statement at line %v:%v with token '%s' in file : %s\n",p.lineNumber(), t.Pos, t.Val, p.name)
+		p.errorf("Invalid statement at line %d:%d with token '%s' in file : %s\n",p.lineNumber(), t.Pos, t.Val, p.name)
 	}
 }
 
@@ -232,7 +232,7 @@ func parseExpr(p *Parser, expr ast.Expr) ast.Expr {
 				paren.Rparen = t
 				return expr
 			} else {
-				p.errorf("Invalid expression at line %d:%d with token %v in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
+				p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 			}
 		}
 	case *ast.ParenExpr:
@@ -263,7 +263,7 @@ func  parseStartExpr(p *Parser) ast.Expr {
 		paren := newParenExpr(p, t)
 		return parseExpr(p, paren)
 	default:
-		p.errorf("Invalid start of expression at line %d:%d with token %v in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
+		p.errorf("Invalid start of expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 	}
 	return nil
 }
@@ -452,7 +452,7 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 				return parseExpr(p, binary)
 			}
 		default:
-			p.errorf("Invalid binary expression at line %d:%d with token %v in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
+			p.errorf("Invalid binary expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 		}
 	}
 	return nil
@@ -475,8 +475,8 @@ func newParenExpr(p *Parser, t lex.Token) *ast.ParenExpr {
 }
 
 func newIdentExpr(p *Parser, t lex.Token) *ast.Ident {
-	switch t {
-	case t.Typ == lex.IDENTIFIER:
+	switch t.Typ {
+	case lex.IDENTIFIER:
 		ident := &ast.Ident{Tok:t}
 		obj := p.topScope.Lookup(t.Val)
 		if obj == nil {
@@ -486,7 +486,7 @@ func newIdentExpr(p *Parser, t lex.Token) *ast.Ident {
 		}
 		return ident
 	default:
-		p.errorf("Invalid expression at %d:%d expected an identifier but found \'%s\' in file : %S\n", p.lineNumber(), t.Pos, t.Val, p.name)
+		p.errorf("Invalid expression at %d:%d expected an identifier but found '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 	}
 	return nil
 }
