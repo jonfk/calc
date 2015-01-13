@@ -350,8 +350,7 @@ func Equals(a, b Node) bool {
 	case *Ident:
 		switch b.(type) {
 		case *Ident:
-			if b.(*Ident).Tok.Val == a.(*Ident).Tok.Val &&
-				b.(*Ident).Tok.Typ == a.(*Ident).Tok.Typ {
+			if b.(*Ident).Tok.Equals(a.(*Ident).Tok) {
 				return true
 			}
 			return false
@@ -361,8 +360,7 @@ func Equals(a, b Node) bool {
 	case *BasicLit:
 		switch b.(type) {
 		case *BasicLit:
-			if b.(*BasicLit).Tok.Val == a.(*BasicLit).Tok.Val &&
-				b.(*BasicLit).Tok.Typ == a.(*BasicLit).Tok.Typ {
+			if b.(*BasicLit).Tok.Equals(a.(*BasicLit).Tok) {
 				return true
 			}
 			return false
@@ -372,21 +370,27 @@ func Equals(a, b Node) bool {
 	case *ParenExpr:
 		switch b.(type) {
 		case *ParenExpr:
-			return Equals(a.(*ParenExpr).X, b.(*ParenExpr).X)
+			aP, bP := a.(*ParenExpr), b.(*ParenExpr)
+			return aP.Lparen.Equals(bP.Lparen) &&
+				aP.Rparen.Equals(bP.Rparen) &&
+				Equals(aP.X, bP.X)
 		default:
 			return false
 		}
 	case *UnaryExpr:
 		switch b.(type) {
 		case *UnaryExpr:
-			return Equals(a.(*UnaryExpr).X, b.(*UnaryExpr).X)
+			return a.(*UnaryExpr).Op.Equals(b.(*UnaryExpr).Op) &&
+				Equals(a.(*UnaryExpr).X, b.(*UnaryExpr).X)
 		default:
 			return false
 		}
 	case *BinaryExpr:
 		switch b.(type) {
 		case *BinaryExpr:
-			return Equals(a.(*BinaryExpr).X, b.(*BinaryExpr).X)
+			return a.(*BinaryExpr).Op.Equals(b.(*BinaryExpr).Op) &&
+				Equals(a.(*BinaryExpr).Y, b.(*BinaryExpr).Y) &&
+				Equals(a.(*BinaryExpr).X, b.(*BinaryExpr).X)
 		default:
 			return false
 		}

@@ -8,17 +8,22 @@ The parser is a custom recursive descent parser. The parsing support was
 also inspired by go/parser and text/template/parse.
 
 ###TODO
-- Fix paren expression parsing
-- Add comment support to parsing
 - Add more tests for parser
+- Add comment support to parsing
 - Add eval package and implement an interpreter
+- Add string literals
+- Add character literals
 - Add support for val declarations
 - Add support for let statements
 - Add support for function literals
 - Add support for function declarations
+- Add typing system
+- Vendor dependencies
 
 ###Notes
 - Identifiers can be alphanumeric with an underscore '_'
+- Expressions can end with a ';' but ';' are not strictly necessary. They can be used
+to disambiguate certain expressions.
 
 ##Grammar in BNF
 
@@ -60,5 +65,7 @@ also inspired by go/parser and text/template/parse.
 ###Dependencies
 Depedencies are kept to a minimum.
 - https://github.com/davecgh/go-spew
-    Used for testing and debugging
-`go get github.com/davecgh/go-spew/spew`
+```bash
+Used for testing and debugging
+go get github.com/davecgh/go-spew/spew
+```

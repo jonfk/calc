@@ -159,3 +159,7 @@ func (tok Token) IsOperator() bool { return tok.Typ > OPERATOR }
 // it returns false otherwise.
 //
 func (tok Token) IsKeyword() bool { return tok.Typ > KEYWORD && tok.Typ < OPERATOR }
+
+// Compares Typ and Val but not position
+// Used for debugging and testing
+func (t Token) Equals(ot Token) bool { return t.Val == ot.Val && t.Typ == ot.Typ }
