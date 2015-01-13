@@ -5,6 +5,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+	"fmt"
+	"bytes"
 )
 
 // -------------------------------------------------------------------
@@ -342,6 +344,24 @@ func NewFile() *File {
 	}
 }
 
+/*
+// A Package node represents a set of source files
+// collectively building a Go package.
+//
+type Package struct {
+	Name    string             // package name
+	Scope   *Scope             // package scope across all files
+	Imports map[string]*Object // map of package id -> package object
+	Files   map[string]*File   // Go source files by filename
+}
+
+func (p *Package) Pos() token.Pos { return token.NoPos }
+func (p *Package) End() token.Pos { return token.NoPos }
+*/
+
+// --------------------------------------------------------------------------------
+// Utility Functions
+
 // Does deep comparison of Nodes
 // Compares values of nodes and not position
 // Used for testing
@@ -415,17 +435,107 @@ func Equals(a, b Node) bool {
 	}
 }
 
-/*
-// A Package node represents a set of source files
-// collectively building a Go package.
-//
-type Package struct {
-	Name    string             // package name
-	Scope   *Scope             // package scope across all files
-	Imports map[string]*Object // map of package id -> package object
-	Files   map[string]*File   // Go source files by filename
+// Print prints the node to standard output
+func  Sprint(n Node, d int) string {
+	switch n.(type) {
+	case *Ident:
+		return n.(*Ident).String()
+	case *BasicLit:
+		return n.(*BasicLit).String()
+	case *ParenExpr:
+		return n.(*ParenExpr).StringDepth(d)
+	case *UnaryExpr:
+		return n.(*UnaryExpr).StringDepth(d)
+	case *BinaryExpr:
+		return n.(*BinaryExpr).StringDepth(d)
+	case *File:
+		return n.(*File).String()
+	default:
+		return ""
+	}
+	return ""
 }
 
-func (p *Package) Pos() token.Pos { return token.NoPos }
-func (p *Package) End() token.Pos { return token.NoPos }
-*/
+// func (n *Ident) String() string {
+// 	return fmt.Sprintf("(ident %s)", n.Tok)
+// }
+
+func (n *BasicLit) String() string {
+	return fmt.Sprintf("(basiclit %s)", n.Tok)
+}
+
+func (n *ParenExpr) String() string {
+	return fmt.Sprintf("(ParenExpr %s)", Sprint(n.X, 0))
+}
+
+func (n *UnaryExpr) String() string {
+	return fmt.Sprintf("(UnaryExpr \n\tOp:%s \n\tX:%s)", n.Op, Sprint(n.X, 0))
+}
+
+func (n *BinaryExpr) String() string {
+	return fmt.Sprintf("(BinaryExpr \n\tOp:%s \n\tX:%s \n\tY:%s)", n.Op, Sprint(n.X, 0), Sprint(n.Y, 0))
+}
+
+func (n *File) String() string {
+	var buffer bytes.Buffer
+	buffer.WriteString("(File ")
+	for _,node := range n.List {
+		buffer.WriteString("\n\n")
+		buffer.WriteString(Sprint(node, 0))
+	}
+	return buffer.String()
+}
+
+// Util print functions to print the correct depth
+
+func (n *ParenExpr) StringDepth(d int) string {
+	return fmt.Sprintf("(ParenExpr %s)", Sprint(n.X, d+1))
+}
+
+func (n *UnaryExpr) StringDepth(d int) string {
+	var buffer bytes.Buffer
+	buffer.WriteString("(UnaryExpr ")
+	buffer.WriteString("\n")
+	for i := 0 ; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+
+	buffer.WriteString("Op: ")
+	buffer.WriteString(n.Op.String())
+	buffer.WriteString("\n")
+	for i := 0 ; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+	buffer.WriteString(Sprint(n.X, d+1))
+	buffer.WriteString(")")
+
+	return buffer.String()
+}
+
+func (n *BinaryExpr) StringDepth(d int) string {
+	var buffer bytes.Buffer
+	buffer.WriteString("(BinaryExpr ")
+	buffer.WriteString("\n")
+	for i := 0 ; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+
+	buffer.WriteString("Op: ")
+	buffer.WriteString(n.Op.String())
+	buffer.WriteString("\n")
+	for i := 0 ; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+	buffer.WriteString("X: ")
+	buffer.WriteString(Sprint(n.X, d+1))
+
+	buffer.WriteString("\n")
+	for i := 0 ; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+	buffer.WriteString("Y: ")
+	buffer.WriteString(Sprint(n.Y, d+1))
+	buffer.WriteString(")")
+
+	return buffer.String()
+}
