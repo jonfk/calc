@@ -21,6 +21,7 @@ also inspired by go/parser and text/template/parse.
 - Add support for lists
 - Add typing system
 - Vendor dependencies
+- Make project go gettable with cannonical import paths based on where it is hosted
 
 ###Notes
 - Identifiers can be alphanumeric with an underscore '_'
