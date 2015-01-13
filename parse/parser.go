@@ -174,7 +174,7 @@ func (p *Parser) run() {
 
 func parseFile(p *Parser) {
 	switch t := p.nextNonNewline(); {
-	case t.Typ == lex.IDENTIFIER || t.Typ == lex.INT || t.Typ == lex.FLOAT || t.Typ == lex.LEFTPAREN || t.Typ == lex.ADD || t.Typ == lex.SUB:
+	case t.Typ == lex.IDENTIFIER || t.Typ == lex.INT || t.Typ == lex.FLOAT || t.Typ == lex.LEFTPAREN || isUnaryOp(t):
 		p.backup()
 		expr := parseExpr(p, nil)
 		p.File.List = append(p.File.List, expr)
@@ -195,22 +195,6 @@ func parseFile(p *Parser) {
 
 // parses a let expression according to the grammar rule:
 // let_expr ::= LET IDENTIFIER ASSIGN expr END
-func parseLet(p *Parser) {
-	assign := p.lastNode.(*ast.Assign)
-	switch t := p.next(); {
-	case t.Typ == lex.IDENTIFIER:
-		id := ast.NewIdent(t.Val)
-		id.Obj = ast.NewObj(ast.Val, t.Val)
-		id.Obj.Decl = assign
-		assign.Lhs = id
-		if eq := p.next(); eq.Typ == lex.ASSIGN {
-			assign.Assign = eq
-		}
-		assign.Rhs = parseExpr(p, nil)
-	default:
-		p.errorf("Invalid let expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
-	}
-}
 
 func parseExpr(p *Parser, expr ast.Expr) ast.Expr {
 	switch expr.(type) {
@@ -249,17 +233,17 @@ func parseExpr(p *Parser, expr ast.Expr) ast.Expr {
 }
 
 func  parseStartExpr(p *Parser) ast.Expr {
-	switch t := p.nextNonNewline(); t.Typ {
-	case lex.IDENTIFIER:
+	switch t := p.nextNonNewline(); {
+	case t.Typ == lex.IDENTIFIER:
 		ident := newIdentExpr(p, t)
 		return parseExpr(p, ident)
-	case lex.INT, lex.FLOAT:
+	case t.Typ == lex.INT || t.Typ == lex.FLOAT:
 		bLit := &ast.BasicLit{Tok:t}
 		return parseExpr(p, bLit)
-	case lex.ADD, lex.SUB:
+	case isUnaryOp(t):
 		unary := &ast.UnaryExpr{Op:t}
 		return parseExpr(p, unary)
-	case lex.LEFTPAREN:
+	case t.Typ == lex.LEFTPAREN:
 		paren := newParenExpr(p, t)
 		return parseExpr(p, paren)
 	default:
@@ -284,7 +268,7 @@ func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
 			num := &ast.BasicLit{Tok:t}
 			expr.X = parseExpr(p, num)
 			return parseExpr(p, expr)
-		case t.Typ == lex.SUB || t.Typ == lex.ADD:
+		case isUnaryOp(t):
 			unary := &ast.UnaryExpr{Op:t}
 			expr.X = parseExpr(p, unary)
 			return parseExpr(p, expr)
@@ -460,6 +444,15 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 
 // ---------------------------------------------------------------------------------------------------------------
 // Utility functions for parsing
+
+func isUnaryOp(t lex.Token) bool {
+	switch t.Typ {
+	case lex.NOT, lex.ADD, lex.SUB:
+		return true
+	default:
+		return false
+	}
+}
 
 func atTerminator(t lex.Token) bool {
 	if t.Typ == lex.NEWLINE || t.Typ == lex.SEMICOLON || t.Typ == lex.EOF || t.Typ == lex.THEN {
