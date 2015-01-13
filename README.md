@@ -8,7 +8,6 @@ The parser is a custom recursive descent parser. The parsing support was
 also inspired by go/parser and text/template/parse.
 
 ###TODO
-- Fix unary operators in parser: -, +, !
 - Add more tests for parser
 - Add comment support to parsing
 - Add eval package and implement an interpreter
@@ -27,6 +26,19 @@ also inspired by go/parser and text/template/parse.
 - Identifiers can be alphanumeric with an underscore '_'
 - Expressions can end with a ';' but ';' are not strictly necessary. They can be used
 to disambiguate certain expressions.
+- Unary Expressions cannot span multiple lines
+- Binary Expressions can span multiple lines only if line ends with operator
+- Operator precedence are left binding and as follows:
+
+    Highest(5): *, /, %
+           (4): +, -
+           (3): ==, !=, <, >, <=, >=
+           (2): &&
+    Lower  (1): ||
+    Lowest (0): anything else
+
+    e.g 4+2/3 == 4 + (2/3)
+        4-5+4%a+5 == (4 - (5 - (4%a))) + 5
 
 ##Grammar in BNF
 
