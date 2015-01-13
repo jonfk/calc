@@ -8,6 +8,7 @@ The parser is a custom recursive descent parser. The parsing support was
 also inspired by go/parser and text/template/parse.
 
 ###TODO
+- Fix unary operators in parser: -, +, !
 - Add more tests for parser
 - Add comment support to parsing
 - Add eval package and implement an interpreter
@@ -17,6 +18,7 @@ also inspired by go/parser and text/template/parse.
 - Add support for let statements
 - Add support for function literals
 - Add support for function declarations
+- Add support for lists
 - Add typing system
 - Vendor dependencies
 
@@ -66,6 +68,6 @@ to disambiguate certain expressions.
 Depedencies are kept to a minimum.
 - https://github.com/davecgh/go-spew
 ```bash
-Used for testing and debugging
+# Used for testing and debugging
 go get github.com/davecgh/go-spew/spew
 ```
