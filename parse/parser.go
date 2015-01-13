@@ -374,7 +374,7 @@ func parseUnaryExpr(p *Parser, expr *ast.UnaryExpr) ast.Expr {
 			expr.X = parseExpr(p, paren)
 			return expr
 		default:
-			p.errorf("Invalid unary expression at line %d:%d with token '%s' in file : 5S\n", p.lineNumber(), t.Pos, t.Val, p.name)
+			p.errorf("Invalid unary expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t, p.name)
 		}
 	} else {
 		switch t:= p.next(); {
@@ -427,7 +427,7 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 		case atTerminator(t):
 			return expr
 		case t.IsOperator():
-			if t.Precedence() > expr.Op.Precedence() {
+			if t.Precedence() >= expr.Op.Precedence() {
 				binary := &ast.BinaryExpr{X:expr.Y, Op:t}
 				expr.Y = parseExpr(p, binary)
 				return expr
@@ -435,6 +435,10 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 				binary := &ast.BinaryExpr{X:expr, Op:t}
 				return parseExpr(p, binary)
 			}
+		case t.Typ == lex.RIGHTPAREN:
+			paren := p.pDepth.pop()
+			paren.Rparen = t
+			return expr
 		default:
 			p.errorf("Invalid binary expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 		}
@@ -442,7 +446,7 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 	return nil
 }
 
-// ---------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------
 // Utility functions for parsing
 
 func isUnaryOp(t lex.Token) bool {
