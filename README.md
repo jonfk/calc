@@ -30,15 +30,17 @@ to disambiguate certain expressions.
 - Binary Expressions can span multiple lines only if line ends with operator
 - Operator precedence are left binding and as follows:
 
-    Highest(5): *, /, %
-           (4): +, -
-           (3): ==, !=, <, >, <=, >=
-           (2): &&
-    Lower  (1): ||
-    Lowest (0): anything else
+```
+Highest(5): *, /, %
+       (4): +, -
+       (3): ==, !=, <, >, <=, >=
+       (2): &&
+Lower  (1): ||
+Lowest (0): anything else
 
-    e.g 4+2/3 == 4 + (2/3)
-        4-5+4%a+5 == (4 - (5 - (4%a))) + 5
+e.g 4+2/3 == 4 + (2/3)
+    4-5+4%a+5 == (4 - (5 - (4%a))) + 5
+```
 
 ##Grammar in BNF
 
