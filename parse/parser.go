@@ -193,23 +193,6 @@ func parseFile(p *Parser) {
 	}
 }
 
-func parseIdent(p *Parser) *ast.Ident {
-	switch t := p.nextNonNewline(); {
-	case t.Typ == lex.IDENTIFIER:
-		ident := &ast.Ident{Tok:t}
-		obj := p.topScope.Lookup(t.Val)
-		if obj == nil {
-			p.File.Unresolved = append(p.File.Unresolved, ident)
-		} else {
-			ident.Obj = obj
-		}
-		return ident
-	default:
-		p.errorf("Invalid expression at %d:%d expected an identifier but found %v in file : %S\n", p.lineNumber(), t.Pos, t.Val, p.name)
-	}
-	return nil
-}
-
 // parses a let expression according to the grammar rule:
 // let_expr ::= LET IDENTIFIER ASSIGN expr END
 func parseLet(p *Parser) {
@@ -268,8 +251,7 @@ func parseExpr(p *Parser, expr ast.Expr) ast.Expr {
 func  parseStartExpr(p *Parser) ast.Expr {
 	switch t := p.nextNonNewline(); t.Typ {
 	case lex.IDENTIFIER:
-		p.backup()
-		ident := parseIdent(p)
+		ident := newIdentExpr(p, t)
 		return parseExpr(p, ident)
 	case lex.INT, lex.FLOAT:
 		bLit := &ast.BasicLit{Tok:t}
@@ -286,19 +268,6 @@ func  parseStartExpr(p *Parser) ast.Expr {
 	return nil
 }
 
-func atTerminator(t lex.Token) bool {
-	if t.Typ == lex.NEWLINE || t.Typ == lex.SEMICOLON || t.Typ == lex.EOF || t.Typ == lex.THEN {
-		return true
-	}
-	return false
-}
-
-func newParenExpr(p *Parser, t lex.Token) *ast.ParenExpr {
-	paren := &ast.ParenExpr{Lparen:t}
-	p.pDepth.push(paren)
-	return paren
-}
-
 func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
 	// if expr.X == nil && expr.Rparen.Val == ""
 	// else if expr.X != nil && expr.Rparen.Val == ""
@@ -308,8 +277,7 @@ func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
 	if expr.X == nil && expr.Rparen.Val == "" {
 		switch t := p.nextNonNewline(); {
 		case t.Typ == lex.IDENTIFIER:
-			p.backup()
-			ident := parseIdent(p)
+			ident := newIdentExpr(p, t)
 			expr.X = parseExpr(p, ident)
 			return parseExpr(p, expr)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
@@ -406,8 +374,7 @@ func parseUnaryExpr(p *Parser, expr *ast.UnaryExpr) ast.Expr {
 	if expr.X == nil {
 		switch t := p.next(); {
 		case t.Typ == lex.IDENTIFIER:
-			p.backup()
-			ident := parseIdent(p)
+			ident := newIdentExpr(p, t)
 			expr.X = ident
 			return parseExpr(p, expr)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
@@ -457,8 +424,7 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 			expr.Y = parseExpr(p, unary)
 			return expr
 		case t.Typ == lex.IDENTIFIER:
-			p.backup()
-			ident := parseIdent(p)
+			ident := newIdentExpr(p, t)
 			expr.Y = ident
 			return parseExpr(p, expr)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
@@ -488,6 +454,39 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 		default:
 			p.errorf("Invalid binary expression at line %d:%d with token %v in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 		}
+	}
+	return nil
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Utility functions for parsing
+
+func atTerminator(t lex.Token) bool {
+	if t.Typ == lex.NEWLINE || t.Typ == lex.SEMICOLON || t.Typ == lex.EOF || t.Typ == lex.THEN {
+		return true
+	}
+	return false
+}
+
+func newParenExpr(p *Parser, t lex.Token) *ast.ParenExpr {
+	paren := &ast.ParenExpr{Lparen:t}
+	p.pDepth.push(paren)
+	return paren
+}
+
+func newIdentExpr(p *Parser, t lex.Token) *ast.Ident {
+	switch t {
+	case t.Typ == lex.IDENTIFIER:
+		ident := &ast.Ident{Tok:t}
+		obj := p.topScope.Lookup(t.Val)
+		if obj == nil {
+			p.File.Unresolved = append(p.File.Unresolved, ident)
+		} else {
+			ident.Obj = obj
+		}
+		return ident
+	default:
+		p.errorf("Invalid expression at %d:%d expected an identifier but found \'%s\' in file : %S\n", p.lineNumber(), t.Pos, t.Val, p.name)
 	}
 	return nil
 }
