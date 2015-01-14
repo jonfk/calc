@@ -2,10 +2,10 @@ package parse
 
 import (
 	// "fmt"
-	"testing"
-	"jon/calc/lex"
-	"jon/calc/ast"
 	"github.com/davecgh/go-spew/spew"
+	"jon/calc/ast"
+	"jon/calc/lex"
+	"testing"
 )
 
 func TestSimpleBinaryAdd(t *testing.T) {
@@ -15,12 +15,12 @@ func TestSimpleBinaryAdd(t *testing.T) {
 	output := parser.File
 	nodeList := []ast.Node{
 		&ast.BinaryExpr{
-			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
-			Op:lex.Token{Typ:lex.ADD, Val:"+"},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
+			Op: lex.Token{Typ: lex.ADD, Val: "+"},
 			Y: &ast.BasicLit{
 				Tok: lex.Token{
-					Typ:lex.INT,
-					Val:"4",
+					Typ: lex.INT,
+					Val: "4",
 				},
 			},
 		},
@@ -40,8 +40,8 @@ func TestSimpleUnary(t *testing.T) {
 	output := parser.File
 	nodeList := []ast.Node{
 		&ast.UnaryExpr{
-			Op:lex.Token{Typ:lex.SUB, Val:"-"},
-			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"2"}},
+			Op: lex.Token{Typ: lex.SUB, Val: "-"},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "2"}},
 		},
 	}
 	expected := &ast.File{
@@ -59,16 +59,16 @@ func TestSimpleParen(t *testing.T) {
 	output := parser.File
 	nodeList := []ast.Node{
 		&ast.BinaryExpr{
-			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
-			Op:lex.Token{Typ:lex.ADD, Val:"+"},
-			Y: &ast.ParenExpr{Lparen: lex.Token{Typ:lex.LEFTPAREN, Val:"("},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
+			Op: lex.Token{Typ: lex.ADD, Val: "+"},
+			Y: &ast.ParenExpr{Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
 				X: &ast.BasicLit{
 					Tok: lex.Token{
-						Typ:lex.INT,
-						Val:"4",
+						Typ: lex.INT,
+						Val: "4",
 					},
 				},
-				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
 			},
 		},
 	}
@@ -87,19 +87,19 @@ func TestCompositeParen(t *testing.T) {
 	output := parser.File
 	nodeList := []ast.Node{
 		&ast.ParenExpr{
-			Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
-			Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+			Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+			Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
 			X: &ast.BinaryExpr{
 				X: &ast.ParenExpr{
-					Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
-					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
-					X: &ast.BasicLit{ Tok:lex.Token{Typ:lex.INT, Val:"4"}},
+					Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
+					X:      &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
 				},
-				Op:lex.Token{Typ:lex.ADD, Val:"+"},
+				Op: lex.Token{Typ: lex.ADD, Val: "+"},
 				Y: &ast.ParenExpr{
-					Lparen: lex.Token{Typ:lex.LEFTPAREN, Val:"("},
-					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
-					X: &ast.BasicLit{ Tok: lex.Token{Typ:lex.INT, Val:"4"}},
+					Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
+					X:      &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
 				},
 			},
 		},
@@ -112,31 +112,55 @@ func TestCompositeParen(t *testing.T) {
 	}
 }
 
-func TestSimpleArithmeticPrecedence(t *testing.T) {
-	input := `a+b*2-3/4%a`
-	parser := Parse("TestCompositeParen", input)
+func TestAssociativityADDSUB(t *testing.T) {
+	input := `7-4+2`
+	parser := Parse("TestAssociativityADDSUB", input)
 
 	output := parser.File
 	nodeList := []ast.Node{
 		&ast.BinaryExpr{
 			X: &ast.BinaryExpr{
-				X: &ast.Ident{ Tok: lex.Token{Typ:lex.IDENTIFIER, Val:"a"}},
-				Op: lex.Token{Typ:lex.ADD, Val:"+"},
+				X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "7"}},
+				Op: lex.Token{Typ: lex.SUB, Val: "-"},
+				Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
+			},
+			Op: lex.Token{Typ: lex.ADD, Val: "+"},
+			Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "2"}},
+		},
+	}
+	expected := &ast.File{
+		List: nodeList,
+	}
+	if !ast.Equals(parser.File, expected) {
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+	}
+}
+
+func TestSimpleArithmeticPrecedence(t *testing.T) {
+	input := `a+b*2-3/4%a`
+	parser := Parse("TestSimpleArithmeticPrecedence", input)
+
+	output := parser.File
+	nodeList := []ast.Node{
+		&ast.BinaryExpr{
+			X: &ast.BinaryExpr{
+				X:  &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "a"}},
+				Op: lex.Token{Typ: lex.ADD, Val: "+"},
 				Y: &ast.BinaryExpr{
-					X: &ast.Ident{ Tok: lex.Token{Typ:lex.IDENTIFIER, Val:"b"}},
-					Op: lex.Token{Typ:lex.MUL, Val:"*"},
-					Y: &ast.BasicLit{ Tok:lex.Token{Typ:lex.INT, Val:"2"}},
+					X:  &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "b"}},
+					Op: lex.Token{Typ: lex.MUL, Val: "*"},
+					Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "2"}},
 				},
 			},
-			Op: lex.Token{Typ:lex.SUB, Val:"-"},
+			Op: lex.Token{Typ: lex.SUB, Val: "-"},
 			Y: &ast.BinaryExpr{
 				X: &ast.BinaryExpr{
-					X: &ast.BasicLit{ Tok:lex.Token{Typ:lex.INT, Val:"3"}},
-					Op: lex.Token{Typ:lex.QUO, Val:"/"},
-					Y: &ast.BasicLit{ Tok:lex.Token{Typ:lex.INT, Val:"4"}},
+					X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "3"}},
+					Op: lex.Token{Typ: lex.QUO, Val: "/"},
+					Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
 				},
-				Op: lex.Token{Typ:lex.REM, Val:"%"},
-				Y: &ast.Ident{ Tok: lex.Token{Typ:lex.IDENTIFIER, Val:"a"}},
+				Op: lex.Token{Typ: lex.REM, Val: "%"},
+				Y:  &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "a"}},
 			},
 		},
 	}
@@ -159,23 +183,23 @@ func TestMultiExpr(t *testing.T) {
 	output := parser.File
 	nodeList := []ast.Node{
 		&ast.BinaryExpr{
-			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
-			Op:lex.Token{Typ:lex.ADD, Val:"+"},
-			Y: &ast.ParenExpr{Lparen: lex.Token{Typ:lex.LEFTPAREN, Val:"("},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
+			Op: lex.Token{Typ: lex.ADD, Val: "+"},
+			Y: &ast.ParenExpr{Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
 				X: &ast.BasicLit{
 					Tok: lex.Token{
-						Typ:lex.INT,
-						Val:"4",
+						Typ: lex.INT,
+						Val: "4",
 					},
 				},
-				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
 			},
 		},
 		&ast.BinaryExpr{
-			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
-			Op:lex.Token{Typ:lex.MUL, Val:"*"},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
+			Op: lex.Token{Typ: lex.MUL, Val: "*"},
 			Y: &ast.BasicLit{
-				Tok: lex.Token{ Typ:lex.INT, Val:"4"},
+				Tok: lex.Token{Typ: lex.INT, Val: "4"},
 			},
 		},
 	}
@@ -197,38 +221,38 @@ func TestMultiExprSemiColonSeperated(t *testing.T) {
 	output := parser.File
 	nodeList := []ast.Node{
 		&ast.BinaryExpr{
-			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
-			Op:lex.Token{Typ:lex.ADD, Val:"+"},
-			Y: &ast.ParenExpr{Lparen: lex.Token{Typ:lex.LEFTPAREN, Val:"("},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
+			Op: lex.Token{Typ: lex.ADD, Val: "+"},
+			Y: &ast.ParenExpr{Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
 				X: &ast.BasicLit{
 					Tok: lex.Token{
-						Typ:lex.INT,
-						Val:"4",
+						Typ: lex.INT,
+						Val: "4",
 					},
 				},
-				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
 			},
 		},
 		&ast.BinaryExpr{
-			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
-			Op:lex.Token{Typ:lex.MUL, Val:"*"},
-			Y: &ast.BasicLit{Tok: lex.Token{ Typ:lex.INT, Val:"4"}},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
+			Op: lex.Token{Typ: lex.MUL, Val: "*"},
+			Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
 		},
 		&ast.ParenExpr{
-			Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
-			Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+			Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+			Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
 			X: &ast.BinaryExpr{
 				X: &ast.ParenExpr{
-					Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
-					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
-					X: &ast.BasicLit{ Tok:lex.Token{Typ:lex.INT, Val:"100"}},
+					Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
+					X:      &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "100"}},
 				},
-				Op:lex.Token{Typ:lex.QUO, Val:"/"},
-				Y: &ast.BasicLit{ Tok: lex.Token{Typ:lex.INT, Val:"90"}},
+				Op: lex.Token{Typ: lex.QUO, Val: "/"},
+				Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "90"}},
 			},
 		},
 		&ast.UnaryExpr{Op: lex.Token{Typ: lex.SUB, Val: "-"},
-			X: &ast.Ident{ Tok: lex.Token{Typ:lex.IDENTIFIER, Val:"aTest"}},
+			X: &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "aTest"}},
 		},
 	}
 	expected := &ast.File{
@@ -253,47 +277,47 @@ func TestMultiExprMixedSemiColonSeperated(t *testing.T) {
 	output := parser.File
 	nodeList := []ast.Node{
 		&ast.BinaryExpr{
-			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
-			Op:lex.Token{Typ:lex.ADD, Val:"+"},
-			Y: &ast.ParenExpr{Lparen: lex.Token{Typ:lex.LEFTPAREN, Val:"("},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
+			Op: lex.Token{Typ: lex.ADD, Val: "+"},
+			Y: &ast.ParenExpr{Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
 				X: &ast.BasicLit{
 					Tok: lex.Token{
-						Typ:lex.INT,
-						Val:"4",
+						Typ: lex.INT,
+						Val: "4",
 					},
 				},
-				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
 			},
 		},
 		&ast.BinaryExpr{
-			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
-			Op:lex.Token{Typ:lex.MUL, Val:"*"},
-			Y: &ast.BasicLit{Tok: lex.Token{ Typ:lex.INT, Val:"4"}},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
+			Op: lex.Token{Typ: lex.MUL, Val: "*"},
+			Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
 		},
 		&ast.ParenExpr{
-			Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
-			Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+			Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+			Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
 			X: &ast.BinaryExpr{
 				X: &ast.ParenExpr{
-					Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
-					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
-					X: &ast.BasicLit{ Tok:lex.Token{Typ:lex.INT, Val:"100"}},
+					Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
+					X:      &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "100"}},
 				},
-				Op:lex.Token{Typ:lex.QUO, Val:"/"},
-				Y: &ast.BasicLit{ Tok: lex.Token{Typ:lex.INT, Val:"90"}},
+				Op: lex.Token{Typ: lex.QUO, Val: "/"},
+				Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "90"}},
 			},
 		},
 		&ast.UnaryExpr{Op: lex.Token{Typ: lex.SUB, Val: "-"},
-			X: &ast.Ident{ Tok: lex.Token{Typ:lex.IDENTIFIER, Val:"aTest"}},
+			X: &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "aTest"}},
 		},
 		&ast.BinaryExpr{
 			X: &ast.ParenExpr{
-				Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
-				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
-				X: &ast.Ident{Tok:lex.Token{Typ:lex.IDENTIFIER, Val:"aoeu"}},
+				Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
+				X:      &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "aoeu"}},
 			},
-			Op:lex.Token{Typ:lex.QUO, Val:"/"},
-			Y: &ast.BasicLit{Tok: lex.Token{ Typ:lex.INT, Val:"2222"}},
+			Op: lex.Token{Typ: lex.QUO, Val: "/"},
+			Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "2222"}},
 		},
 	}
 	expected := &ast.File{
@@ -321,51 +345,51 @@ func TestMultiLineExprs(t *testing.T) {
 	output := parser.File
 	nodeList := []ast.Node{
 		&ast.BinaryExpr{
-			X: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
-			Op:lex.Token{Typ:lex.ADD, Val:"+"},
-			Y: &ast.ParenExpr{Lparen: lex.Token{Typ:lex.LEFTPAREN, Val:"("},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
+			Op: lex.Token{Typ: lex.ADD, Val: "+"},
+			Y: &ast.ParenExpr{Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
 				X: &ast.BasicLit{
 					Tok: lex.Token{
-						Typ:lex.INT,
-						Val:"4",
+						Typ: lex.INT,
+						Val: "4",
 					},
 				},
-				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
 			},
 		},
 		&ast.BinaryExpr{
-			Op:lex.Token{Typ:lex.ADD, Val:"+"},
-			X: &ast.BasicLit{Tok: lex.Token{ Typ:lex.INT, Val:"4"}},
+			Op: lex.Token{Typ: lex.ADD, Val: "+"},
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
 			Y: &ast.BinaryExpr{
-				Op: lex.Token{Typ:lex.MUL, Val:"*"},
-				X: &ast.Ident{ Tok: lex.Token{Typ:lex.IDENTIFIER, Val:"p"}},
-				Y: &ast.BasicLit{Tok:lex.Token{Typ:lex.INT, Val:"4"}},
+				Op: lex.Token{Typ: lex.MUL, Val: "*"},
+				X:  &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "p"}},
+				Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "4"}},
 			},
 		},
 		&ast.ParenExpr{
-			Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
-			Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
+			Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+			Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
 			X: &ast.BinaryExpr{
 				X: &ast.ParenExpr{
-					Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
-					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
-					X: &ast.BasicLit{ Tok:lex.Token{Typ:lex.INT, Val:"100"}},
+					Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+					Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
+					X:      &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "100"}},
 				},
-				Op:lex.Token{Typ:lex.QUO, Val:"/"},
-				Y: &ast.BasicLit{ Tok: lex.Token{Typ:lex.INT, Val:"90"}},
+				Op: lex.Token{Typ: lex.QUO, Val: "/"},
+				Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "90"}},
 			},
 		},
 		&ast.UnaryExpr{Op: lex.Token{Typ: lex.SUB, Val: "-"},
-			X: &ast.Ident{ Tok: lex.Token{Typ:lex.IDENTIFIER, Val:"aTest"}},
+			X: &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "aTest"}},
 		},
 		&ast.BinaryExpr{
 			X: &ast.ParenExpr{
-				Lparen: lex.Token{Typ: lex.LEFTPAREN, Val:"("},
-				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val:")"},
-				X: &ast.Ident{Tok:lex.Token{Typ:lex.IDENTIFIER, Val:"aoeu"}},
+				Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+				Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
+				X:      &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "aoeu"}},
 			},
-			Op:lex.Token{Typ:lex.QUO, Val:"/"},
-			Y: &ast.BasicLit{Tok: lex.Token{ Typ:lex.INT, Val:"2222"}},
+			Op: lex.Token{Typ: lex.QUO, Val: "/"},
+			Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "2222"}},
 		},
 	}
 	expected := &ast.File{
