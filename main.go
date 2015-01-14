@@ -5,8 +5,8 @@ import (
 	//"io/ioutil"
 	"fmt"
 	// "jon/calc/ast"
-	"jon/calc/parse"
 	"github.com/davecgh/go-spew/spew"
+	"jon/calc/parse"
 )
 
 func main() {
@@ -45,10 +45,9 @@ func main() {
 	// fmt.Println("tree")
 	// spew.Dump(test)
 
-
 	// Test parser
 	input :=
-`4+4`
+		`4+4`
 	parser := parse.Parse("TestAdd", input)
 	fmt.Println("parser")
 	spew.Dump(parser)

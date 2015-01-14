@@ -2,29 +2,28 @@ package parse
 
 import (
 	"fmt"
-	"os"
 	"jon/calc/ast"
 	"jon/calc/lex"
+	"os"
 	"strings"
 	// "github.com/davecgh/go-spew/spew"
 )
 
-
 // parser holds the state of the scanner.
 type Parser struct {
-	name   string      // the name of the input; used only for error reports
-	input  string      // the string being scanned
-	pos    int         // the position of token in Items; pos == -1 when Items is nil
-	Items  []lex.Token // the unreduced items received from the lexer
-	lastToken lex.Token // Used for error and debug messages
+	name      string      // the name of the input; used only for error reports
+	input     string      // the string being scanned
+	pos       int         // the position of token in Items; pos == -1 when Items is nil
+	Items     []lex.Token // the unreduced items received from the lexer
+	lastToken lex.Token   // Used for error and debug messages
 
-	Lexer  *lex.Lexer  // the lexer
+	Lexer *lex.Lexer // the lexer
 
-	File   *ast.File    // the file being parsed
+	File     *ast.File  // the file being parsed
 	topScope *ast.Scope // may be nil if topmost scope
 	lastNode ast.Node   // last node parsed ??? currently only used by let. Is it necessary?
 
-	pDepth  *ParenDepth  // paren depth for parsing expressions
+	pDepth *ParenDepth // paren depth for parsing expressions
 }
 
 // -----------------------------------------------------------------------------
@@ -139,13 +138,13 @@ func (p *Parser) errorf(format string, args ...interface{}) {
 func Parse(name, input string) *Parser {
 	l := lex.Lex(name, input)
 	p := &Parser{
-		name:  name,
-		input: input,
-		pos: -1,
-		Lexer: l,
-		File: ast.NewFile(),
+		name:     name,
+		input:    input,
+		pos:      -1,
+		Lexer:    l,
+		File:     ast.NewFile(),
 		topScope: ast.NewScope(nil),
-		pDepth: new(ParenDepth),
+		pDepth:   new(ParenDepth),
 	}
 	p.run()
 	return p
@@ -159,7 +158,7 @@ func (p *Parser) run() {
 
 	// lex everything
 	t := p.Lexer.NextItem()
-	for ;t.Typ != lex.EOF; t = p.Lexer.NextItem() {
+	for ; t.Typ != lex.EOF; t = p.Lexer.NextItem() {
 		p.Items = append(p.Items, t)
 	}
 	p.Items = append(p.Items, t)
@@ -189,7 +188,7 @@ func parseFile(p *Parser) {
 	// 	p.lastNode = assign
 	// 	parseLet(p)
 	default:
-		p.errorf("Invalid statement at line %d:%d with token '%s' in file : %s\n",p.lineNumber(), t.Pos, t.Val, p.name)
+		p.errorf("Invalid statement at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 	}
 }
 
@@ -204,7 +203,7 @@ func parseExpr(p *Parser, expr ast.Expr) ast.Expr {
 		mark := p.pos
 		switch t := p.nextNonNewline(); {
 		case t.IsOperator():
-			oper := &ast.BinaryExpr{X:expr, Op:t}
+			oper := &ast.BinaryExpr{X: expr, Op: t}
 			return parseExpr(p, oper)
 		default:
 			p.pos = mark
@@ -232,16 +231,16 @@ func parseExpr(p *Parser, expr ast.Expr) ast.Expr {
 	return nil
 }
 
-func  parseStartExpr(p *Parser) ast.Expr {
+func parseStartExpr(p *Parser) ast.Expr {
 	switch t := p.nextNonNewline(); {
 	case t.Typ == lex.IDENTIFIER:
 		ident := newIdentExpr(p, t)
 		return parseExpr(p, ident)
 	case t.Typ == lex.INT || t.Typ == lex.FLOAT:
-		bLit := &ast.BasicLit{Tok:t}
+		bLit := &ast.BasicLit{Tok: t}
 		return parseExpr(p, bLit)
 	case isUnaryOp(t):
-		unary := &ast.UnaryExpr{Op:t}
+		unary := &ast.UnaryExpr{Op: t}
 		return parseExpr(p, unary)
 	case t.Typ == lex.LEFTPAREN:
 		paren := newParenExpr(p, t)
@@ -265,11 +264,11 @@ func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
 			expr.X = parseExpr(p, ident)
 			return parseExpr(p, expr)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
-			num := &ast.BasicLit{Tok:t}
+			num := &ast.BasicLit{Tok: t}
 			expr.X = parseExpr(p, num)
 			return parseExpr(p, expr)
 		case isUnaryOp(t):
-			unary := &ast.UnaryExpr{Op:t}
+			unary := &ast.UnaryExpr{Op: t}
 			expr.X = parseExpr(p, unary)
 			return parseExpr(p, expr)
 		case t.Typ == lex.LEFTPAREN:
@@ -297,8 +296,8 @@ func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
 			return nil
 		case t.IsOperator():
 			binary := &ast.BinaryExpr{
-				X:expr.X,
-				Op:t}
+				X:  expr.X,
+				Op: t}
 			expr.X = parseExpr(p, binary)
 			return parseExpr(p, expr)
 		case t.Typ == lex.LEFTPAREN:
@@ -330,8 +329,8 @@ func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
 			return nil
 		case t.IsOperator():
 			binary := &ast.BinaryExpr{
-				X:expr,
-				Op:t}
+				X:  expr,
+				Op: t}
 			return parseExpr(p, binary)
 		case t.Typ == lex.LEFTPAREN:
 			p.errorf("Invalid paren expression closed expression followed by opening parenthesis at line %d:%d with token '%s' in file %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
@@ -362,11 +361,11 @@ func parseUnaryExpr(p *Parser, expr *ast.UnaryExpr) ast.Expr {
 			expr.X = ident
 			return parseExpr(p, expr)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
-			bLit := &ast.BasicLit{Tok:t}
+			bLit := &ast.BasicLit{Tok: t}
 			expr.X = bLit
 			return parseExpr(p, expr)
 		case t.Typ == lex.ADD || t.Typ == lex.SUB:
-			unary := &ast.UnaryExpr{Op:t}
+			unary := &ast.UnaryExpr{Op: t}
 			expr.X = parseExpr(p, unary)
 			return expr
 		case t.Typ == lex.LEFTPAREN:
@@ -377,7 +376,7 @@ func parseUnaryExpr(p *Parser, expr *ast.UnaryExpr) ast.Expr {
 			p.errorf("Invalid unary expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t, p.name)
 		}
 	} else {
-		switch t:= p.next(); {
+		switch t := p.next(); {
 		case atTerminator(t):
 			return expr
 		case t.Typ == lex.RIGHTPAREN:
@@ -386,11 +385,11 @@ func parseUnaryExpr(p *Parser, expr *ast.UnaryExpr) ast.Expr {
 			return paren
 		case t.IsOperator():
 			if t.Precedence() > expr.Op.Precedence() {
-				binary := &ast.BinaryExpr{X:expr.X, Op:t}
+				binary := &ast.BinaryExpr{X: expr.X, Op: t}
 				expr.X = parseExpr(p, binary)
 				return expr
 			} else {
-				binary := &ast.BinaryExpr{X:expr, Op:t}
+				binary := &ast.BinaryExpr{X: expr, Op: t}
 				return parseExpr(p, binary)
 			}
 		default:
@@ -404,7 +403,7 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 	if expr.Y == nil {
 		switch t := p.nextNonNewline(); {
 		case t.Typ == lex.ADD || t.Typ == lex.SUB:
-			unary := &ast.UnaryExpr{Op:t}
+			unary := &ast.UnaryExpr{Op: t}
 			expr.Y = parseExpr(p, unary)
 			return expr
 		case t.Typ == lex.IDENTIFIER:
@@ -412,7 +411,7 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 			expr.Y = ident
 			return parseExpr(p, expr)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
-			bLit := &ast.BasicLit{Tok:t}
+			bLit := &ast.BasicLit{Tok: t}
 			expr.Y = bLit
 			return parseExpr(p, expr)
 		case t.Typ == lex.LEFTPAREN:
@@ -427,12 +426,13 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 		case atTerminator(t):
 			return expr
 		case t.IsOperator():
-			if t.Precedence() >= expr.Op.Precedence() {
-				binary := &ast.BinaryExpr{X:expr.Y, Op:t}
+			if t.Precedence() > expr.Op.Precedence() {
+				binary := &ast.BinaryExpr{X: expr.Y, Op: t}
 				expr.Y = parseExpr(p, binary)
 				return expr
 			} else {
-				binary := &ast.BinaryExpr{X:expr, Op:t}
+				fmt.Println("operator less")
+				binary := &ast.BinaryExpr{X: expr, Op: t}
 				return parseExpr(p, binary)
 			}
 		case t.Typ == lex.RIGHTPAREN:
@@ -466,7 +466,7 @@ func atTerminator(t lex.Token) bool {
 }
 
 func newParenExpr(p *Parser, t lex.Token) *ast.ParenExpr {
-	paren := &ast.ParenExpr{Lparen:t}
+	paren := &ast.ParenExpr{Lparen: t}
 	p.pDepth.push(paren)
 	return paren
 }
@@ -474,7 +474,7 @@ func newParenExpr(p *Parser, t lex.Token) *ast.ParenExpr {
 func newIdentExpr(p *Parser, t lex.Token) *ast.Ident {
 	switch t.Typ {
 	case lex.IDENTIFIER:
-		ident := &ast.Ident{Tok:t}
+		ident := &ast.Ident{Tok: t}
 		obj := p.topScope.Lookup(t.Val)
 		if obj == nil {
 			p.File.Unresolved = append(p.File.Unresolved, ident)
