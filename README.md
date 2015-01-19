@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/jonfk/calc.svg)](https://travis-ci.org/jonfk/calc)
+[![GoDoc](https://godoc.org/github.com/jonfk/calc?status.svg)](http://godoc.org/github.com/jonfk/calc)
 
 calc
 ====
