@@ -3,7 +3,7 @@ package ast
 import (
 	"bytes"
 	"fmt"
-	"jon/calc/lex"
+	"github.com/jonfk/calc/lex"
 )
 
 // A Scope maintains the set of named language entities declared

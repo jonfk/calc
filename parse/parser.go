@@ -2,8 +2,8 @@ package parse
 
 import (
 	"fmt"
-	"jon/calc/ast"
-	"jon/calc/lex"
+	"github.com/jonfk/calc/ast"
+	"github.com/jonfk/calc/lex"
 	"os"
 	"strings"
 	// "github.com/davecgh/go-spew/spew"

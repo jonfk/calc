@@ -1,7 +1,7 @@
 package parse
 
 import (
-	"jon/calc/ast"
+	"github.com/jonfk/calc/ast"
 	// "fmt"
 )
 

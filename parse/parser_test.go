@@ -3,8 +3,8 @@ package parse
 import (
 	// "fmt"
 	"github.com/davecgh/go-spew/spew"
-	"jon/calc/ast"
-	"jon/calc/lex"
+	"github.com/jonfk/calc/ast"
+	"github.com/jonfk/calc/lex"
 	"testing"
 )
 

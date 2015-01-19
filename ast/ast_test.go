@@ -2,7 +2,7 @@ package ast
 
 import (
 	// "fmt"
-	"jon/calc/lex"
+	"github.com/jonfk/calc/lex"
 	"testing"
 )
 

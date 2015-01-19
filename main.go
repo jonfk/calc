@@ -1,12 +1,12 @@
 package main
 
 import (
-	// "jon/calc/lex"
+	// "github.com/jonfk/calc/lex"
 	//"io/ioutil"
 	"fmt"
-	// "jon/calc/ast"
+	// "github.com/jonfk/calc/ast"
 	"github.com/davecgh/go-spew/spew"
-	"jon/calc/parse"
+	"github.com/jonfk/calc/parse"
 )
 
 func main() {

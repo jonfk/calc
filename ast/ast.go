@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"jon/calc/lex"
+	"github.com/jonfk/calc/lex"
 	"strings"
 	"unicode"
 	"unicode/utf8"
