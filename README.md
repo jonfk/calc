@@ -1,5 +1,8 @@
+[![Build Status](https://travis-ci.org/jonfk/calc.svg)](https://travis-ci.org/jonfk/calc)
+
 calc
 ====
+
 My toy calculator language. The lexer was inspired by the
 [text/template/parse package](http://golang.org/pkg/text/template/parse/)
 from the standard library and this talk by Rob Pike:

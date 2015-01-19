@@ -431,7 +431,6 @@ func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
 				expr.Y = parseExpr(p, binary)
 				return expr
 			} else {
-				fmt.Println("operator less")
 				binary := &ast.BinaryExpr{X: expr, Op: t}
 				return parseExpr(p, binary)
 			}

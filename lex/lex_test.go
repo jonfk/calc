@@ -1,7 +1,7 @@
 package lex
 
 import (
-	"fmt"
+	// "fmt"
 	"testing"
 )
 
@@ -50,19 +50,19 @@ func TestInts(t *testing.T) {
 	var output []Token
 	expected := []Token{
 		Token{Typ: INT, Val: "10"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: INT, Val: "0b101011"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: INT, Val: "0B11111"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: INT, Val: "0c77627"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: INT, Val: "0C77272"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: INT, Val: "0x009abc"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: INT, Val: "0X0293ABC"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: EOF, Val: ""},
 	}
 	for {
@@ -95,7 +95,7 @@ func TestFloats(t *testing.T) {
 	expected := []Token{
 		Token{Typ: FLOAT, Val: "3.1"},
 		Token{Typ: FLOAT, Val: "2.0e10"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: FLOAT, Val: "99."},
 		Token{Typ: EOF, Val: ""},
 	}
@@ -132,15 +132,15 @@ func TestFloatArith(t *testing.T) {
 		Token{Typ: FLOAT, Val: "3.1"},
 		Token{Typ: SUB, Val: "-"},
 		Token{Typ: FLOAT, Val: "2.0"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: FLOAT, Val: "64."},
 		Token{Typ: MUL, Val: "*"},
 		Token{Typ: FLOAT, Val: "9.0"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: FLOAT, Val: "10."},
 		Token{Typ: REM, Val: "%"},
 		Token{Typ: FLOAT, Val: "2."},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: FLOAT, Val: "9.9"},
 		Token{Typ: QUO, Val: "/"},
 		Token{Typ: FLOAT, Val: "3.1"},
@@ -216,35 +216,35 @@ true==true
 		Token{Typ: FLOAT, Val: "9."},
 		Token{Typ: GEQ, Val: ">="},
 		Token{Typ: FLOAT, Val: "9."},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: INT, Val: "8"},
 		Token{Typ: LEQ, Val: "<="},
 		Token{Typ: INT, Val: "2"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: INT, Val: "8"},
 		Token{Typ: LSS, Val: "<"},
 		Token{Typ: INT, Val: "10"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: FLOAT, Val: "1."},
 		Token{Typ: GTR, Val: ">"},
 		Token{Typ: INT, Val: "2"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: BOOL, Val: "true"},
 		Token{Typ: EQL, Val: "=="},
 		Token{Typ: BOOL, Val: "true"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: FLOAT, Val: "2."},
 		Token{Typ: NEQ, Val: "!="},
 		Token{Typ: INT, Val: "2"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: EOF, Val: ""},
 	}
 	for {
 		item := lexer.NextItem()
 		output = append(output, item)
-		fmt.Printf("%s ", item)
+		// fmt.Printf("%s ", item)
 		if item.Typ == EOF {
-			fmt.Println()
+			// fmt.Println()
 			break
 		}
 	}
@@ -269,18 +269,18 @@ false&&true`
 	lexer := Lex("TestLComp", input)
 	var output []Token
 	expected := []Token{
-		Token{Typ:NEWLINE, Val:"\n\n"},
+		Token{Typ: NEWLINE, Val: "\n\n"},
 		Token{Typ: NOT, Val: "!"},
 		Token{Typ: LEFTPAREN, Val: "("},
 		Token{Typ: BOOL, Val: "false"},
 		Token{Typ: RIGHTPAREN, Val: ")"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: BOOL, Val: "true"},
 		Token{Typ: LOR, Val: "||"},
 		Token{Typ: LEFTPAREN, Val: "("},
 		Token{Typ: BOOL, Val: "false"},
 		Token{Typ: RIGHTPAREN, Val: ")"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: BOOL, Val: "false"},
 		Token{Typ: LAND, Val: "&&"},
 		Token{Typ: BOOL, Val: "true"},
@@ -315,11 +315,11 @@ func TestComments(t *testing.T) {
 	lexer := Lex("TestComments", input)
 	var output []Token
 	expected := []Token{
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: LINECOMMENT, Val: "//aoeu"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: LINECOMMENT, Val: "///*test*/"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: BLOCKCOMMENT, Val: "/*test*/"},
 		Token{Typ: EOF, Val: ""},
 	}
@@ -353,11 +353,11 @@ func TestSemiColons(t *testing.T) {
 	var output []Token
 	expected := []Token{
 		Token{Typ: INT, Val: "10"},
-		Token{Typ:SEMICOLON, Val:";"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: SEMICOLON, Val: ";"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: INT, Val: "1"},
-		Token{Typ:SEMICOLON, Val:";"},
-		Token{Typ:NEWLINE, Val:"\n"},
+		Token{Typ: SEMICOLON, Val: ";"},
+		Token{Typ: NEWLINE, Val: "\n"},
 		Token{Typ: EOF, Val: ""},
 	}
 	for {
