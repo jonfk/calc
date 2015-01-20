@@ -15,7 +15,6 @@ also inspired by go/parser and text/template/parse.
 - Add more tests for parser
 - Add comment support to parsing
 - Add eval package and implement an interpreter
-- Add string literals
 - Add character literals
 - Add support for val declarations
 - Add support for let statements

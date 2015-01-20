@@ -20,7 +20,6 @@ type Node interface {
 type Expr interface {
 	Node
 	exprNode()
-	Type() NodeType
 }
 
 // All declaration nodes implement the Decl interface.
@@ -39,25 +38,6 @@ type Stmt interface {
 */
 
 // ---------------------------------------------------------------------
-// Node Types
-
-type NodeType int
-
-const (
-	CommentNode NodeType = iota
-	CommentGroupNode
-	BadExprNode
-	IdentNode
-	BasicLitNode
-	ParenExprNode
-	UnaryExprNode
-	BinaryExprNode
-	BlockExprNode
-	IfExprNode
-	AssignNode
-)
-
-// ---------------------------------------------------------------------
 // Comments
 
 // A Comment node represents a single //-style or /*-style comment.
@@ -66,9 +46,8 @@ type Comment struct {
 	Text  string  // comment text (excluding '\n' for //-style comments)
 }
 
-func (c *Comment) Pos() lex.Pos   { return c.Slash }
-func (c *Comment) End() lex.Pos   { return lex.Pos(int(c.Slash) + len(c.Text)) }
-func (c *Comment) Type() NodeType { return CommentNode }
+func (c *Comment) Pos() lex.Pos { return c.Slash }
+func (c *Comment) End() lex.Pos { return lex.Pos(int(c.Slash) + len(c.Text)) }
 
 // A CommentGroup represents a sequence of comments
 // with no other tokens and no empty lines between.
@@ -77,9 +56,8 @@ type CommentGroup struct {
 	List []*Comment // len(List) > 0
 }
 
-func (g *CommentGroup) Pos() lex.Pos   { return g.List[0].Pos() }
-func (g *CommentGroup) End() lex.Pos   { return g.List[len(g.List)-1].End() }
-func (g *CommentGroup) Type() NodeType { return CommentGroupNode }
+func (g *CommentGroup) Pos() lex.Pos { return g.List[0].Pos() }
+func (g *CommentGroup) End() lex.Pos { return g.List[len(g.List)-1].End() }
 
 func isWhitespace(ch byte) bool { return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' }
 
@@ -236,15 +214,6 @@ func (x *BinaryExpr) End() lex.Pos { return x.Y.End() }
 func (x *BlockExpr) End() lex.Pos  { return x.EndPos }
 func (x *IfExpr) End() lex.Pos     { return x.EndTok.Pos }
 
-func (x *BadExpr) Type() NodeType    { return BadExprNode }
-func (x *Ident) Type() NodeType      { return IdentNode }
-func (x *BasicLit) Type() NodeType   { return BasicLitNode }
-func (x *ParenExpr) Type() NodeType  { return ParenExprNode }
-func (x *UnaryExpr) Type() NodeType  { return UnaryExprNode }
-func (x *BinaryExpr) Type() NodeType { return BinaryExprNode }
-func (x *BlockExpr) Type() NodeType  { return BlockExprNode }
-func (x *IfExpr) Type() NodeType     { return IfExprNode }
-
 // exprNode() ensures that only expression/type nodes can be
 // assigned to an ExprNode.
 //
@@ -294,8 +263,6 @@ type (
 func (x *Assign) Pos() lex.Pos { return x.Let.Pos }
 
 func (x *Assign) End() lex.Pos { return x.EndTok.Pos }
-
-func (x *Assign) Type() NodeType { return AssignNode }
 
 func (*Assign) declNode() {}
 
