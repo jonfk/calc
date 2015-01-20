@@ -336,8 +336,8 @@ func TestMultiLineExprs(t *testing.T) {
 (4)
          4+p*
 4
-   ((100)
-/90);-aTest;
+   ((100)/
+90);-aTest;
 (aoeu)/2222
 `
 	parser := Parse("TestMultiLineExpressions", input)

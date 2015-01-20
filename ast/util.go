@@ -232,8 +232,10 @@ func sprintd(n Node, d int) string {
 		return n.(*BinaryExpr).StringDepth(d)
 	case *File:
 		return n.(*File).String()
+	case nil:
+		return "<nil>"
 	default:
-		return ""
+		return "<<UNKNOWN>>"
 	}
 	return ""
 }
