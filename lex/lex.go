@@ -81,6 +81,19 @@ func (l *Lexer) lineNumber() int {
 	return 1 + strings.Count(l.input[:l.lastPos], "\n")
 }
 
+// colNumber reports which column on the current line we're on,
+// based on the position of the current rune
+func (l *Lexer) colNumber() int {
+	ln := l.lineNumber()
+	lines := strings.SplitN(l.input, "\n", ln)
+	var total int
+	for i := range lines[:ln-1] {
+		total += len(lines[i])
+	}
+	fmt.Printf("pos : %d", l.pos)
+	return int(l.pos) - total - (ln - 1)
+}
+
 // errorf returns an error token and terminates the scan by passing
 // back a nil pointer that will be the next state, terminating l.nextItem.
 func (l *Lexer) errorf(format string, args ...interface{}) stateFn {
@@ -122,6 +135,8 @@ func lexStart(l *Lexer) stateFn {
 		return nil
 	case r == ';':
 		return lexSemiColon
+	case r == '"':
+		return lexString
 	case isSpace(r):
 		return lexSpace
 	case isEndOfLine(r):
@@ -143,7 +158,7 @@ func lexStart(l *Lexer) stateFn {
 		l.emit(RIGHTPAREN)
 		l.parenDepth--
 		if l.parenDepth < 0 {
-			return l.errorf("unexpected right paren %#U", r)
+			return l.errorf("unexpected right paren at line %d:%d with %#U", l.lineNumber(), l.colNumber(), r)
 		}
 		return lexStart
 	default:
@@ -156,6 +171,7 @@ func lexSemiColon(l *Lexer) stateFn {
 	l.emit(SEMICOLON)
 	return lexStart
 }
+
 // lexSpace scans a run of space characters.
 // One space has already been seen.
 func lexSpace(l *Lexer) stateFn {
@@ -189,7 +205,7 @@ func lexNumber(l *Lexer) stateFn {
 	if !l.scanInt() {
 		l.pos = mark
 		if !l.scanFloat() {
-			return l.errorf("bad number syntax: %q", l.input[l.start:l.pos])
+			return l.errorf("bad number syntax at %d:%d with %q", l.lineNumber(), l.colNumber(), l.input[l.start:l.pos])
 		}
 		l.emit(FLOAT)
 		return lexStart
@@ -236,6 +252,22 @@ func (l *Lexer) scanFloat() bool {
 		return false
 	}
 	return true
+}
+
+func lexString(l *Lexer) stateFn {
+Loop:
+	for {
+		switch r := l.next(); {
+		case r != '"':
+			// absorb.
+		case r == eof:
+			return l.errorf("Non-terminating string literal at %#U", r)
+		default:
+			l.emit(STRING)
+			break Loop
+		}
+	}
+	return lexStart
 }
 
 // lexIdentifier scans an alphanumeric.
@@ -295,15 +327,11 @@ Loop:
 		default:
 			l.backup()
 			word := l.input[l.start:l.pos]
-			// Is it necessary? But cannot be used or will error between arithmetic e.g. 2+2 as 2 is not a terminator
-			// if !l.atTerminator() {
-			// 	return l.errorf("bad character %#U", r)
-			// }
 			switch {
 			case key[word] > OPERATOR:
 				l.emit(key[word])
 			default:
-				return l.errorf("bad character %#U", r)
+				return l.errorf("bad character %#U at %d:%d", r, l.lineNumber(), l.colNumber())
 			}
 			break Loop
 		}
@@ -320,7 +348,7 @@ Loop:
 		default:
 			l.backup()
 			if !l.atTerminator() {
-				return l.errorf("bad character %#U", r)
+				return l.errorf("bad character %#U at %d:%d", r, l.lineNumber(), l.colNumber())
 			}
 			l.emit(LINECOMMENT)
 			break Loop

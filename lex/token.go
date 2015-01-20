@@ -42,16 +42,17 @@ const (
 	ERROR TokenType = iota // error occurred; value is text of error
 	BOOL                   // boolean constant
 	EOF
-	NEWLINE                      // '\n'
+	NEWLINE      // '\n'
 	LINECOMMENT  // // ..... includes symbol
 	BLOCKCOMMENT // /* block comment includes surrounding symbols*/
 	LEFTPAREN    // '('
 	//NUMBER       // simple number, including imaginary
-	INT            // an int
-	FLOAT          // a float
-	RIGHTPAREN   // ')'
-	SEMICOLON    // ';'
-	IDENTIFIER   // alphanumeric identifier not starting with '.'
+	INT        // an int
+	FLOAT      // a float
+	STRING     // a string literal
+	RIGHTPAREN // ')'
+	SEMICOLON  // ';'
+	IDENTIFIER // alphanumeric identifier not starting with '.'
 	// Keywords appear after all the rest.
 	KEYWORD // used only to delimit the keywords
 	ELSE    // else keyword

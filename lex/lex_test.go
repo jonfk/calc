@@ -327,7 +327,7 @@ func TestComments(t *testing.T) {
 		item := lexer.NextItem()
 		output = append(output, item)
 		//fmt.Printf("%s ", item)
-		if item.Typ == EOF {
+		if item.Typ == EOF || item.Typ == ERROR {
 			//fmt.Println()
 			break
 		}
@@ -365,6 +365,39 @@ func TestSemiColons(t *testing.T) {
 		output = append(output, item)
 		//fmt.Printf("%s ", item)
 		if item.Typ == EOF {
+			//fmt.Println()
+			break
+		}
+	}
+	if len(output) != len(expected) {
+		t.Errorf("\nExpected: %+v\n Got:     %+v\n", expected, output)
+	}
+	for i, item := range output {
+		if item.Typ != expected[i].Typ || item.Val != expected[i].Val {
+			// For more information add %#v e.g:
+			// t.Logf("\nExpected: %#v\n Got:     %#v\n", output, expected)
+			t.Errorf("\nExpected: %+v\n Got:     %+v\n", expected, output)
+		}
+	}
+}
+
+func TestStringLiterals(t *testing.T) {
+	input := `"aoeu" 9 + 8`
+
+	lexer := Lex("TestStringLiterals", input)
+	var output []Token
+	expected := []Token{
+		Token{Typ: STRING, Val: "\"aoeu\""},
+		Token{Typ: INT, Val: "9"},
+		Token{Typ: ADD, Val: "+"},
+		Token{Typ: INT, Val: "8"},
+		Token{Typ: EOF, Val: ""},
+	}
+	for {
+		item := lexer.NextItem()
+		output = append(output, item)
+		//fmt.Printf("%s ", item)
+		if item.Typ == EOF || item.Typ == ERROR {
 			//fmt.Println()
 			break
 		}
