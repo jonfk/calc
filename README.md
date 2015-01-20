@@ -99,11 +99,12 @@ e.g 4+2/3 == 4 + (2/3)
 
 ###Planned Extensions to grammar
 - Add pattern matching to grammar
+```
+pattern = "(" , pat , "," , pat , { "," , pat } , ")" # n > 1
+        | literal
 
-    pattern = "(" , pat , "," , pat , { "," , pat } , ")" # n > 1
-            | literal
-
-    val_decl ::= val pat ASSIGN expr
+val_decl ::= val pat ASSIGN expr
+```
 
 ##Dependencies
 Depedencies are kept to a minimum.
