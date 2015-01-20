@@ -14,16 +14,20 @@ also inspired by go/parser and text/template/parse.
 ###TODO
 - Add more tests for parser
 - Add comment support to parsing
+- Add support for val declarations
+- Add if expressions
 - Add eval package and implement an interpreter
 - Add character literals
-- Add support for val declarations
 - Add support for let statements
 - Add support for function literals
 - Add support for function declarations
 - Add support for lists
-- Add typing system
-- Vendor dependencies
-- Make project go gettable with cannonical import paths based on where it is hosted
+- Add datatypes
+- Add references and probably some for of gc
+- Add records or structs?
+- Add typing system(?) or go with dynamic typing
+- Add pattern matching(?)
+- Vendor dependencies(or remove them)
 
 ###Notes
 - Identifiers can be alphanumeric with an underscore '_'
@@ -45,44 +49,63 @@ e.g 4+2/3 == 4 + (2/3)
     4-5+4%a+5 == ((4 - 5) + (4%a)) + 5
 ```
 
-##Grammar in BNF
+##Grammar in EBNF
 
-    expr ::= num_expr
+    literal = NUMBER
+            | IDENTIFIER
+            | BOOL
+
+
+    if_expr = "if" , bool_expr , "then" , expr , "else" , expr "end"
+
+    num_expr = literal
+               | num_expr , "+" , num_expr
+               | num_expr , "-" , num_expr
+               | num_expr , "*" , num_expr
+               | num_expr , "/" , num_expr
+               | num_expr , "%" , num_expr
+
+    bool_expr = literal
+                | "!" , expr
+                | expr , "&&" , expr
+                | expr , "||" , expr
+                | expr , "==" , expr
+                | expr , ">" , expr
+                | expr , "<" , expr
+                | expr , "!=" , expr
+                | expr , ">=" , expr
+                | expr , "<=" , expr
+
+    tuple_expr = "(" , expr , "," , expr , { "," , expr } , ")" # n > 1
+
+    block = expr , { ("\n" | ";") , expr}
+
+    let_expr = "let" , val_decl , "in" , expr , "end"
+
+    expr = num_expr
            | bool_expr
            | if_expr
-           | LPAREN expr RPAREN
+           | "(" , expr , ")"
+           | tuple_expr
+           | let_expr
+           | block
 
-    if_expr ::= IF bool_expr THEN expr ELSE expr END
+    ident_stmt = IDENTIFIER , { "," , IDENTIFIER }
 
-    num_expr ::= NUMBER
-               | IDENTIFIER
-               | num_expr ADD num_expr
-               | num_expr SUB num_expr
-               | num_expr MUL num_expr
-               | num_expr QUO num_expr
-               | num_expr REM num_expr
+    decl = val_decl
 
-    bool_expr ::= BOOL
-                | IDENTIFIER
-                | NOT bool_expr
-                | bool_expr LAND bool_expr
-                | bool_expr LOR bool_expr
-                | num_expr EQL num_expr
-                | num_expr LSS num_expr
-                | num_expr GTR num_expr
-                | num_expr NEQ num_expr
-                | num_expr LEQ num_expr
-                | num_expr GEQ num_expr
+    val_decl = "val" , ident_stmt , "=" , expr
 
-    ident_stmt ::= IDENTIFIER
 
-    val_decl ::= val ident ASSIGN expr
+###Planned Extensions to grammar
+- Add pattern matching to grammar
 
-    let_decl ::= LET val_decl IN block END
+    pattern = "(" , pat , "," , pat , { "," , pat } , ")" # n > 1
+            | literal
 
-    block ::=
+    val_decl ::= val pat ASSIGN expr
 
-###Dependencies
+##Dependencies
 Depedencies are kept to a minimum.
 - https://github.com/davecgh/go-spew
 ```bash
