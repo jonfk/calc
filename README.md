@@ -19,6 +19,8 @@ also inspired by go/parser and text/template/parse.
 - Add eval package and implement an interpreter
 - Add character literals
 - Add support for let statements
+- Add "=>" token to lexer
+- keep parsing expression if in a paren
 - Add support for function literals
 - Add support for function declarations
 - Add support for lists
@@ -80,7 +82,7 @@ e.g 4+2/3 == 4 + (2/3)
 
     tuple_expr = "(" , expr , "," , expr , { "," , expr } , ")" # n > 1
 
-    function = "fn" , "(" , ident_stmt , ")" , "=" , expr , "end" # remove end keyword ?
+    function = "fn" , "(" , ident_stmt , ")" , "=>" , expr , "end" # remove end keyword ?
 
     block = expr , { ("\n" | ";") , expr}
 
@@ -93,6 +95,7 @@ e.g 4+2/3 == 4 + (2/3)
            | tuple_expr
            | let_expr
            | block
+           | function
            | func_apcl
 
     func_apcl = (IDENTIFIER | function ) , "(" , expr , { "," , expr } , ")"
