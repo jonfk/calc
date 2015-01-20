@@ -78,6 +78,8 @@ e.g 4+2/3 == 4 + (2/3)
 
     tuple_expr = "(" , expr , "," , expr , { "," , expr } , ")" # n > 1
 
+    function = "fn" , "(" , ident_stmt , ")" , "=" , expr , "end"
+
     block = expr , { ("\n" | ";") , expr}
 
     let_expr = "let" , val_decl , "in" , expr , "end"
@@ -96,6 +98,8 @@ e.g 4+2/3 == 4 + (2/3)
 
     val_decl = "val" , ident_stmt , "=" , expr
 
+    func_decl = "def" , IDENTIFIER , "(" , ident_stmt , ")" , "=" , expr , "end"
+
 
 ###Planned Extensions to grammar
 - Add pattern matching to grammar
@@ -103,7 +107,7 @@ e.g 4+2/3 == 4 + (2/3)
 pattern = "(" , pat , "," , pat , { "," , pat } , ")" # n > 1
         | literal
 
-val_decl ::= val pat ASSIGN expr
+val_decl = "val" , pat , "=" , expr
 ```
 
 ##Dependencies
