@@ -2,7 +2,7 @@ package parse
 
 import (
 	// "fmt"
-	"github.com/davecgh/go-spew/spew"
+	// "github.com/davecgh/go-spew/spew"
 	"github.com/jonfk/calc/ast"
 	"github.com/jonfk/calc/lex"
 	"testing"
@@ -29,7 +29,8 @@ func TestSimpleBinaryAdd(t *testing.T) {
 		List: nodeList,
 	}
 	if !ast.Equals(parser.File, expected) {
-		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }
 
@@ -48,7 +49,8 @@ func TestSimpleUnary(t *testing.T) {
 		List: nodeList,
 	}
 	if !ast.Equals(parser.File, expected) {
-		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }
 
@@ -76,7 +78,8 @@ func TestSimpleParen(t *testing.T) {
 		List: nodeList,
 	}
 	if !ast.Equals(parser.File, expected) {
-		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }
 
@@ -108,7 +111,7 @@ func TestCompositeParen(t *testing.T) {
 		List: nodeList,
 	}
 	if !ast.Equals(parser.File, expected) {
-		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }
 
@@ -132,11 +135,13 @@ func TestAssociativityADDSUB(t *testing.T) {
 		List: nodeList,
 	}
 	if !ast.Equals(parser.File, expected) {
-		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }
 
 func TestSimpleArithmeticPrecedence(t *testing.T) {
+	// a+b*2-3/4%a = (a + (b*2)) - ((3/4)%a)
 	input := `a+b*2-3/4%a`
 	parser := Parse("TestSimpleArithmeticPrecedence", input)
 
@@ -168,7 +173,8 @@ func TestSimpleArithmeticPrecedence(t *testing.T) {
 		List: nodeList,
 	}
 	if !ast.Equals(parser.File, expected) {
-		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }
 
@@ -207,7 +213,8 @@ func TestMultiExpr(t *testing.T) {
 		List: nodeList,
 	}
 	if !ast.Equals(parser.File, expected) {
-		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }
 
@@ -336,8 +343,8 @@ func TestMultiLineExprs(t *testing.T) {
 (4)
          4+p*
 4
-   ((100)
-/90);-aTest;
+   ((100)/
+90);-aTest;
 (aoeu)/2222
 `
 	parser := Parse("TestMultiLineExpressions", input)

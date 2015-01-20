@@ -6,7 +6,6 @@ import (
 	"github.com/jonfk/calc/lex"
 	"os"
 	"strings"
-	// "github.com/davecgh/go-spew/spew"
 )
 
 // parser holds the state of the scanner.
@@ -82,12 +81,6 @@ func (p *Parser) backup() error {
 	// 	p.lastToken = p.Items[p.pos]
 	// }
 	return nil
-}
-
-// ignore skips over the pending input before this point.
-func (p *Parser) ignore() {
-	p.Items = append(p.Items[:p.pos], p.Items[p.pos+1:]...)
-	p.pos -= 1
 }
 
 // accept consumes the next token if it's from the valid set.
@@ -175,7 +168,7 @@ func parseFile(p *Parser) {
 	switch t := p.nextNonNewline(); {
 	case t.Typ == lex.IDENTIFIER || t.Typ == lex.INT || t.Typ == lex.FLOAT || t.Typ == lex.LEFTPAREN || isUnaryOp(t):
 		p.backup()
-		expr := parseExpr(p, nil)
+		expr := parseStartExpr(p)
 		p.File.List = append(p.File.List, expr)
 		parseFile(p)
 	case t.Typ == lex.EOF:
@@ -195,126 +188,85 @@ func parseFile(p *Parser) {
 // parses a let expression according to the grammar rule:
 // let_expr ::= LET IDENTIFIER ASSIGN expr END
 
-func parseExpr(p *Parser, expr ast.Expr) ast.Expr {
-	switch expr.(type) {
-	case nil:
-		return parseStartExpr(p)
-	case *ast.Ident, *ast.BasicLit:
-		mark := p.pos
-		switch t := p.nextNonNewline(); {
-		case t.IsOperator():
-			oper := &ast.BinaryExpr{X: expr, Op: t}
-			return parseExpr(p, oper)
-		default:
-			p.pos = mark
-			t = p.next()
-			if atTerminator(t) {
-				return expr
-			} else if t.Typ == lex.RIGHTPAREN {
-				paren := p.pDepth.pop()
-				paren.Rparen = t
-				return expr
-			} else {
-				p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
-			}
-		}
-	case *ast.ParenExpr:
-		return parseParenExpr(p, expr.(*ast.ParenExpr))
-	case *ast.UnaryExpr:
-		return parseUnaryExpr(p, expr.(*ast.UnaryExpr))
-	case *ast.BinaryExpr:
-		return parseBinaryExpr(p, expr.(*ast.BinaryExpr))
-	default:
-		p.errorf("Internal error unknown expression at line %d:%d after token '%s' in file : %s\n", p.lineNumber(), p.lastToken.Pos, p.lastToken.Val, p.name)
-		return nil
-	}
-	return nil
-}
-
 func parseStartExpr(p *Parser) ast.Expr {
-	switch t := p.nextNonNewline(); {
+	switch t := p.next(); {
 	case t.Typ == lex.IDENTIFIER:
 		ident := newIdentExpr(p, t)
-		return parseExpr(p, ident)
+		return parseLiteralOrIdent(p, ident, ident)
 	case t.Typ == lex.INT || t.Typ == lex.FLOAT:
 		bLit := &ast.BasicLit{Tok: t}
-		return parseExpr(p, bLit)
+		return parseLiteralOrIdent(p, bLit, bLit)
 	case isUnaryOp(t):
 		unary := &ast.UnaryExpr{Op: t}
-		return parseExpr(p, unary)
+		return parseUnaryExpr(p, unary, unary)
 	case t.Typ == lex.LEFTPAREN:
 		paren := newParenExpr(p, t)
-		return parseExpr(p, paren)
+		return parseParenExpr(p, paren, paren)
 	default:
 		p.errorf("Invalid start of expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 	}
 	return nil
 }
 
-func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
+func parseLiteralOrIdent(p *Parser, tree, last ast.Expr) ast.Expr {
+	mark := p.pos
+	switch t := p.nextNonNewline(); {
+	case t.IsOperator():
+		oper := &ast.BinaryExpr{Op: t}
+		tree, _ = ast.InsertExpr(tree, oper)
+		return parseBinaryExpr(p, tree, oper)
+	default:
+		p.pos = mark
+		t = p.next()
+		if atTerminator(t) {
+			return tree
+		} else if t.Typ == lex.RIGHTPAREN {
+			paren := p.pDepth.pop()
+			paren.Rparen = t
+			return parseParenExpr(p, tree, paren)
+		} else {
+			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
+		}
+	}
+	return nil
+}
+
+func parseParenExpr(p *Parser, tree ast.Expr, last *ast.ParenExpr) ast.Expr {
 	// if expr.X == nil && expr.Rparen.Val == ""
 	// else if expr.X != nil && expr.Rparen.Val == ""
 	// else if expr.Rparen.Val == ")"
 
 	// Unclosed Empty paren expr
-	if expr.X == nil && expr.Rparen.Val == "" {
+	if last.X == nil && last.Rparen.Val == "" {
 		switch t := p.nextNonNewline(); {
 		case t.Typ == lex.IDENTIFIER:
 			ident := newIdentExpr(p, t)
-			expr.X = parseExpr(p, ident)
-			return parseExpr(p, expr)
+			tree, _ = ast.InsertExpr(tree, ident)
+			return parseLiteralOrIdent(p, tree, ident)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
 			num := &ast.BasicLit{Tok: t}
-			expr.X = parseExpr(p, num)
-			return parseExpr(p, expr)
+			tree, _ = ast.InsertExpr(tree, num)
+			return parseLiteralOrIdent(p, tree, num)
 		case isUnaryOp(t):
 			unary := &ast.UnaryExpr{Op: t}
-			expr.X = parseExpr(p, unary)
-			return parseExpr(p, expr)
+			tree, _ = ast.InsertExpr(tree, unary)
+			return parseUnaryExpr(p, tree, unary)
 		case t.Typ == lex.LEFTPAREN:
 			paren := newParenExpr(p, t)
-			expr.X = parseExpr(p, paren)
-			return parseExpr(p, expr)
+			tree, _ = ast.InsertExpr(tree, paren)
+			return parseParenExpr(p, tree, paren)
 		case t.Typ == lex.RIGHTPAREN:
-			expr.Rparen = t
 			paren := p.pDepth.pop()
-			if paren != expr {
-				p.errorf("Internal error in parseExpr closing paren not matching current paren expr at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
+			paren.Rparen = t
+			if paren != last {
+				p.errorf("Internal error in parseLiteralOrIdent closing paren not matching current paren expr at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 			}
-			return parseExpr(p, expr)
+			return parseParenExpr(p, tree, last)
 		default:
 			p.errorf("Invalid expression at line %d:%d with token '%s' in file %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 		}
-	} else if expr.X != nil && expr.Rparen.Val == "" {
-		// Unclosed non-empty paren expr
-		switch t := p.nextNonNewline(); {
-		case t.Typ == lex.IDENTIFIER:
-			p.errorf("Invalid paren expression closed expression followed by identifier at line %d:%d with token '%s' in file : %s", p.lineNumber(), t.Pos, t.Val, p.name)
-			return nil
-		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
-			p.errorf("Invalid paren expression closed expression followed by literal at line %d:%d with token '%s' in file : %s", p.lineNumber(), t.Pos, t.Val, p.name)
-			return nil
-		case t.IsOperator():
-			binary := &ast.BinaryExpr{
-				X:  expr.X,
-				Op: t}
-			expr.X = parseExpr(p, binary)
-			return parseExpr(p, expr)
-		case t.Typ == lex.LEFTPAREN:
-			p.errorf("Invalid paren expression closed expression followed by opening parenthesis at line %d:%d with token '%s' in file : %s", p.lineNumber(), t.Pos, t.Val, p.name)
-			return nil
-		case t.Typ == lex.RIGHTPAREN:
-			expr.Rparen = t
-			paren := p.pDepth.pop()
-			if paren != expr {
-				p.errorf("Internal error in parseExpr closing paren not matching current paren expr at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
-			}
-			return parseExpr(p, expr)
-		default:
-			p.errorf("Invalid expression at line %d:%d with token '%s' in file %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
-		}
-	} else if expr.Rparen.Val == ")" {
-		if expr.X == nil {
+	} else if last.Rparen.Val == ")" {
+		if last.X == nil {
 			// empty closed paren expr ()
 			// give value nil to ()
 			fmt.Printf("Warning: empty paren expression has value nil")
@@ -328,21 +280,19 @@ func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
 			p.errorf("Invalid paren expression closed expression followed by literal at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 			return nil
 		case t.IsOperator():
-			binary := &ast.BinaryExpr{
-				X:  expr,
-				Op: t}
-			return parseExpr(p, binary)
+			binary := &ast.BinaryExpr{Op: t}
+			tree, _ = ast.InsertExpr(tree, binary)
+			return parseBinaryExpr(p, tree, binary)
 		case t.Typ == lex.LEFTPAREN:
 			p.errorf("Invalid paren expression closed expression followed by opening parenthesis at line %d:%d with token '%s' in file %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 			return nil
 		case t.Typ == lex.RIGHTPAREN:
 			// close enclosing paren in case parenExpr{X:parenExpr{}}
-			//expr.Rparen = t
 			paren := p.pDepth.pop()
 			paren.Rparen = t
-			return expr
+			return parseParenExpr(p, tree, paren)
 		case atTerminator(t):
-			return expr
+			return tree
 		default:
 			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 		}
@@ -353,45 +303,40 @@ func parseParenExpr(p *Parser, expr *ast.ParenExpr) ast.Expr {
 	return nil
 }
 
-func parseUnaryExpr(p *Parser, expr *ast.UnaryExpr) ast.Expr {
-	if expr.X == nil {
+func parseUnaryExpr(p *Parser, tree ast.Expr, last *ast.UnaryExpr) ast.Expr {
+	if last.X == nil {
 		switch t := p.next(); {
 		case t.Typ == lex.IDENTIFIER:
 			ident := newIdentExpr(p, t)
-			expr.X = ident
-			return parseExpr(p, expr)
+			tree, _ = ast.InsertExpr(tree, ident)
+			return parseLiteralOrIdent(p, tree, ident)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
 			bLit := &ast.BasicLit{Tok: t}
-			expr.X = bLit
-			return parseExpr(p, expr)
+			tree, _ = ast.InsertExpr(tree, bLit)
+			return parseLiteralOrIdent(p, tree, bLit)
 		case t.Typ == lex.ADD || t.Typ == lex.SUB:
 			unary := &ast.UnaryExpr{Op: t}
-			expr.X = parseExpr(p, unary)
-			return expr
+			tree, _ = ast.InsertExpr(tree, unary)
+			return parseUnaryExpr(p, tree, unary)
 		case t.Typ == lex.LEFTPAREN:
 			paren := newParenExpr(p, t)
-			expr.X = parseExpr(p, paren)
-			return expr
+			tree, _ = ast.InsertExpr(tree, paren)
+			return parseParenExpr(p, tree, paren)
 		default:
 			p.errorf("Invalid unary expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t, p.name)
 		}
 	} else {
 		switch t := p.next(); {
 		case atTerminator(t):
-			return expr
+			return tree
 		case t.Typ == lex.RIGHTPAREN:
 			paren := p.pDepth.pop()
 			paren.Rparen = t
-			return paren
+			return parseParenExpr(p, tree, paren)
 		case t.IsOperator():
-			if t.Precedence() > expr.Op.Precedence() {
-				binary := &ast.BinaryExpr{X: expr.X, Op: t}
-				expr.X = parseExpr(p, binary)
-				return expr
-			} else {
-				binary := &ast.BinaryExpr{X: expr, Op: t}
-				return parseExpr(p, binary)
-			}
+			binary := &ast.BinaryExpr{Op: t}
+			tree, _ = ast.InsertExpr(tree, binary)
+			return parseBinaryExpr(p, tree, binary)
 		default:
 			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 		}
@@ -399,48 +344,31 @@ func parseUnaryExpr(p *Parser, expr *ast.UnaryExpr) ast.Expr {
 	return nil
 }
 
-func parseBinaryExpr(p *Parser, expr *ast.BinaryExpr) ast.Expr {
-	if expr.Y == nil {
+func parseBinaryExpr(p *Parser, tree ast.Expr, last *ast.BinaryExpr) ast.Expr {
+	if last.Y == nil {
 		switch t := p.nextNonNewline(); {
-		case t.Typ == lex.ADD || t.Typ == lex.SUB:
+		case isUnaryOp(t):
 			unary := &ast.UnaryExpr{Op: t}
-			expr.Y = parseExpr(p, unary)
-			return expr
+			tree, _ = ast.InsertExpr(tree, unary)
+			return parseUnaryExpr(p, tree, unary)
 		case t.Typ == lex.IDENTIFIER:
 			ident := newIdentExpr(p, t)
-			expr.Y = ident
-			return parseExpr(p, expr)
+			tree, _ = ast.InsertExpr(tree, ident)
+			return parseLiteralOrIdent(p, tree, ident)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
 			bLit := &ast.BasicLit{Tok: t}
-			expr.Y = bLit
-			return parseExpr(p, expr)
+			tree, _ = ast.InsertExpr(tree, bLit)
+			return parseLiteralOrIdent(p, tree, bLit)
 		case t.Typ == lex.LEFTPAREN:
 			paren := newParenExpr(p, t)
-			expr.Y = parseExpr(p, paren)
-			return expr
+			tree, _ = ast.InsertExpr(tree, paren)
+			return parseParenExpr(p, tree, paren)
 		default:
 			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %S\n", p.lineNumber(), t.Pos, t.Val, p.name)
 		}
 	} else {
-		switch t := p.next(); {
-		case atTerminator(t):
-			return expr
-		case t.IsOperator():
-			if t.Precedence() > expr.Op.Precedence() {
-				binary := &ast.BinaryExpr{X: expr.Y, Op: t}
-				expr.Y = parseExpr(p, binary)
-				return expr
-			} else {
-				binary := &ast.BinaryExpr{X: expr, Op: t}
-				return parseExpr(p, binary)
-			}
-		case t.Typ == lex.RIGHTPAREN:
-			paren := p.pDepth.pop()
-			paren.Rparen = t
-			return expr
-		default:
-			p.errorf("Invalid binary expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
-		}
+		p.errorf("Internal Error: Invalid parser state in parseBinaryExpr")
+		return nil
 	}
 	return nil
 }
