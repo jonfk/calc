@@ -6,7 +6,6 @@ import (
 	"github.com/jonfk/calc/lex"
 	"os"
 	"strings"
-	// "github.com/davecgh/go-spew/spew"
 )
 
 // parser holds the state of the scanner.
@@ -254,7 +253,7 @@ func parseParenExpr(p *Parser, tree ast.Expr, last *ast.ParenExpr) ast.Expr {
 			return parseUnaryExpr(p, tree, unary)
 		case t.Typ == lex.LEFTPAREN:
 			paren := newParenExpr(p, t)
-			tree,_ = ast.InsertExpr(tree, paren)
+			tree, _ = ast.InsertExpr(tree, paren)
 			return parseParenExpr(p, tree, paren)
 		case t.Typ == lex.RIGHTPAREN:
 			paren := p.pDepth.pop()
@@ -309,7 +308,7 @@ func parseUnaryExpr(p *Parser, tree ast.Expr, last *ast.UnaryExpr) ast.Expr {
 		switch t := p.next(); {
 		case t.Typ == lex.IDENTIFIER:
 			ident := newIdentExpr(p, t)
-			tree,_ = ast.InsertExpr(tree, ident)
+			tree, _ = ast.InsertExpr(tree, ident)
 			return parseLiteralOrIdent(p, tree, ident)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
 			bLit := &ast.BasicLit{Tok: t}
@@ -317,11 +316,11 @@ func parseUnaryExpr(p *Parser, tree ast.Expr, last *ast.UnaryExpr) ast.Expr {
 			return parseLiteralOrIdent(p, tree, bLit)
 		case t.Typ == lex.ADD || t.Typ == lex.SUB:
 			unary := &ast.UnaryExpr{Op: t}
-			tree,_ = ast.InsertExpr(tree, unary)
+			tree, _ = ast.InsertExpr(tree, unary)
 			return parseUnaryExpr(p, tree, unary)
 		case t.Typ == lex.LEFTPAREN:
 			paren := newParenExpr(p, t)
-			tree,_ = ast.InsertExpr(tree, paren)
+			tree, _ = ast.InsertExpr(tree, paren)
 			return parseParenExpr(p, tree, paren)
 		default:
 			p.errorf("Invalid unary expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t, p.name)
@@ -336,7 +335,7 @@ func parseUnaryExpr(p *Parser, tree ast.Expr, last *ast.UnaryExpr) ast.Expr {
 			return parseParenExpr(p, tree, paren)
 		case t.IsOperator():
 			binary := &ast.BinaryExpr{Op: t}
-			tree,_ = ast.InsertExpr(tree, binary)
+			tree, _ = ast.InsertExpr(tree, binary)
 			return parseBinaryExpr(p, tree, binary)
 		default:
 			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
@@ -358,11 +357,11 @@ func parseBinaryExpr(p *Parser, tree ast.Expr, last *ast.BinaryExpr) ast.Expr {
 			return parseLiteralOrIdent(p, tree, ident)
 		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
 			bLit := &ast.BasicLit{Tok: t}
-			tree,_ = ast.InsertExpr(tree, bLit)
+			tree, _ = ast.InsertExpr(tree, bLit)
 			return parseLiteralOrIdent(p, tree, bLit)
 		case t.Typ == lex.LEFTPAREN:
 			paren := newParenExpr(p, t)
-			tree,_ = ast.InsertExpr(tree, paren)
+			tree, _ = ast.InsertExpr(tree, paren)
 			return parseParenExpr(p, tree, paren)
 		default:
 			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %S\n", p.lineNumber(), t.Pos, t.Val, p.name)
