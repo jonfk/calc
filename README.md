@@ -59,11 +59,13 @@ e.g 4+2/3 == 4 + (2/3)
     if_expr = "if" , bool_expr , "then" , expr , "else" , expr "end"
 
     num_expr = literal
-               | num_expr , "+" , num_expr
-               | num_expr , "-" , num_expr
-               | num_expr , "*" , num_expr
-               | num_expr , "/" , num_expr
-               | num_expr , "%" , num_expr
+               | "+" , expr
+               | "-" , expr
+               | expr , "+" , expr
+               | expr , "-" , expr
+               | expr , "*" , expr
+               | expr , "/" , expr
+               | expr , "%" , expr
 
     bool_expr = literal
                 | "!" , expr
@@ -78,7 +80,7 @@ e.g 4+2/3 == 4 + (2/3)
 
     tuple_expr = "(" , expr , "," , expr , { "," , expr } , ")" # n > 1
 
-    function = "fn" , "(" , ident_stmt , ")" , "=" , expr , "end"
+    function = "fn" , "(" , ident_stmt , ")" , "=" , expr , "end" # remove end keyword ?
 
     block = expr , { ("\n" | ";") , expr}
 
@@ -91,6 +93,9 @@ e.g 4+2/3 == 4 + (2/3)
            | tuple_expr
            | let_expr
            | block
+           | func_apcl
+
+    func_apcl = (IDENTIFIER | function ) , "(" , expr , { "," , expr } , ")"
 
     ident_stmt = IDENTIFIER , { "," , IDENTIFIER }
 
