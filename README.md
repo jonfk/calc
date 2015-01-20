@@ -14,7 +14,9 @@ also inspired by go/parser and text/template/parse.
 ###TODO
 - Add more tests for parser
 - Add comment support to parsing
+- Add "val" and "var" tokens to lexer
 - Add support for val declarations
+- Add support for var declarations
 - Add if expressions
 - Add eval package and implement an interpreter
 - Add character literals
@@ -103,8 +105,11 @@ e.g 4+2/3 == 4 + (2/3)
     ident_stmt = IDENTIFIER , { "," , IDENTIFIER }
 
     decl = val_decl
+         | var_decl
 
     val_decl = "val" , ident_stmt , "=" , expr
+
+    var_decl = "var" , ident_stmt , "=" , expr
 
     func_decl = "def" , IDENTIFIER , "(" , ident_stmt , ")" , "=" , expr , "end"
 
