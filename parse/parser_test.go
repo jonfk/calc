@@ -407,3 +407,29 @@ func TestMultiLineExprs(t *testing.T) {
 		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }
+
+func TestSimpleBoolExpr(t *testing.T) {
+	input :=
+		`true || false && test`
+	parser := Parse("TestSimpleBoolExpr", input)
+
+	output := parser.File
+	nodeList := []ast.Node{
+		&ast.BinaryExpr{
+			X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.BOOL, Val: "true"}},
+			Op: lex.Token{Typ: lex.LOR, Val: "||"},
+			Y: &ast.BinaryExpr{
+				X:  &ast.BasicLit{Tok: lex.Token{Typ: lex.BOOL, Val: "false"}},
+				Op: lex.Token{Typ: lex.LAND, Val: "&&"},
+				Y:  &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "test"}},
+			},
+		},
+	}
+	expected := &ast.File{
+		List: nodeList,
+	}
+	if !ast.Equals(parser.File, expected) {
+		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
+	}
+}

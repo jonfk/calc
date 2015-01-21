@@ -174,7 +174,7 @@ func (p *Parser) run() {
 
 func parseFile(p *Parser) {
 	switch t := p.nextNonNewline(); {
-	case t.Typ == lex.IDENTIFIER || t.Typ == lex.INT || t.Typ == lex.FLOAT || t.Typ == lex.LEFTPAREN || isUnaryOp(t):
+	case t.Typ == lex.IDENTIFIER || isLiteral(t) || t.Typ == lex.LEFTPAREN || isUnaryOp(t):
 		p.backup()
 		expr := parseStartExpr(p)
 		p.File.List = append(p.File.List, expr)
@@ -201,7 +201,7 @@ func parseStartExpr(p *Parser) ast.Expr {
 	case t.Typ == lex.IDENTIFIER:
 		ident := newIdentExpr(p, t)
 		return parseLiteralOrIdent(p, ident, ident)
-	case t.Typ == lex.INT || t.Typ == lex.FLOAT:
+	case isLiteral(t):
 		bLit := &ast.BasicLit{Tok: t}
 		return parseLiteralOrIdent(p, bLit, bLit)
 	case isUnaryOp(t):
@@ -251,7 +251,7 @@ func parseParenExpr(p *Parser, tree ast.Expr, last *ast.ParenExpr) ast.Expr {
 			ident := newIdentExpr(p, t)
 			tree, _ = ast.InsertExpr(tree, ident)
 			return parseLiteralOrIdent(p, tree, ident)
-		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
+		case isLiteral(t):
 			num := &ast.BasicLit{Tok: t}
 			tree, _ = ast.InsertExpr(tree, num)
 			return parseLiteralOrIdent(p, tree, num)
@@ -318,7 +318,7 @@ func parseUnaryExpr(p *Parser, tree ast.Expr, last *ast.UnaryExpr) ast.Expr {
 			ident := newIdentExpr(p, t)
 			tree, _ = ast.InsertExpr(tree, ident)
 			return parseLiteralOrIdent(p, tree, ident)
-		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
+		case isLiteral(t):
 			bLit := &ast.BasicLit{Tok: t}
 			tree, _ = ast.InsertExpr(tree, bLit)
 			return parseLiteralOrIdent(p, tree, bLit)
@@ -363,7 +363,7 @@ func parseBinaryExpr(p *Parser, tree ast.Expr, last *ast.BinaryExpr) ast.Expr {
 			ident := newIdentExpr(p, t)
 			tree, _ = ast.InsertExpr(tree, ident)
 			return parseLiteralOrIdent(p, tree, ident)
-		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
+		case isLiteral(t):
 			bLit := &ast.BasicLit{Tok: t}
 			tree, _ = ast.InsertExpr(tree, bLit)
 			return parseLiteralOrIdent(p, tree, bLit)
@@ -387,6 +387,15 @@ func parseBinaryExpr(p *Parser, tree ast.Expr, last *ast.BinaryExpr) ast.Expr {
 func isUnaryOp(t lex.Token) bool {
 	switch t.Typ {
 	case lex.NOT, lex.ADD, lex.SUB:
+		return true
+	default:
+		return false
+	}
+}
+
+func isLiteral(t lex.Token) bool {
+	switch t.Typ {
+	case lex.BOOL, lex.INT, lex.FLOAT, lex.STRING:
 		return true
 	default:
 		return false
