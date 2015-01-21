@@ -49,6 +49,14 @@ func (p *Parser) next() lex.Token {
 	if p.pos >= len(p.Items) {
 		p.errorf("Internal error in next(): parser.pos moving out of bounds of lexed tokens\n")
 	}
+	// Ignore comments for now
+	for p.Items[p.pos].Typ == lex.LINECOMMENT || p.Items[p.pos].Typ == lex.BLOCKCOMMENT {
+		p.pos += 1
+	}
+	// call p.errorf if lexing error
+	if p.Items[p.pos].Typ == lex.ERROR {
+		p.errorf(p.Items[p.pos].String())
+	}
 	p.lastToken = p.Items[p.pos]
 	return p.Items[p.pos]
 }

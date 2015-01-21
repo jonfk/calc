@@ -62,8 +62,7 @@ e.g 4+2/3 == 4 + (2/3)
 
     if_expr = "if" , bool_expr , "then" , expr , "else" , expr "end"
 
-    num_expr = literal
-               | "+" , expr
+    num_expr = "+" , expr
                | "-" , expr
                | expr , "+" , expr
                | expr , "-" , expr
@@ -71,8 +70,7 @@ e.g 4+2/3 == 4 + (2/3)
                | expr , "/" , expr
                | expr , "%" , expr
 
-    bool_expr = literal
-                | "!" , expr
+    bool_expr = "!" , expr
                 | expr , "&&" , expr
                 | expr , "||" , expr
                 | expr , "==" , expr
@@ -90,7 +88,8 @@ e.g 4+2/3 == 4 + (2/3)
 
     let_expr = "let" , val_decl , "in" , expr , "end"
 
-    expr = num_expr
+    expr = literal
+           | num_expr
            | bool_expr
            | if_expr
            | "(" , expr , ")"
