@@ -52,6 +52,7 @@ const (
 	STRING     // a string literal
 	RIGHTPAREN // ')'
 	SEMICOLON  // ';'
+	COMMA      // ','
 	IDENTIFIER // alphanumeric identifier not starting with '.'
 	// Keywords appear after all the rest.
 	KEYWORD // used only to delimit the keywords
@@ -60,6 +61,8 @@ const (
 	IF      // if keyword
 	THEN    // then keyword
 	LET     // let keyword
+	VAR     // var keyword
+	VAL     // val keyword
 
 	OPERATOR
 	// Operators and delimiters
@@ -91,6 +94,8 @@ var key = map[string]TokenType{
 	"if":   IF,
 	"then": THEN,
 	"let":  LET,
+	"val":  VAL,
+	"var":  VAR,
 	"+":    ADD,
 	"-":    SUB,
 	"*":    MUL,

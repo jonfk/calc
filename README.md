@@ -13,8 +13,6 @@ also inspired by go/parser and text/template/parse.
 
 ###TODO
 - Add more tests for parser
-- Add comment support to parsing
-- Add "val" and "var" tokens to lexer
 - Add support for val declarations
 - Add support for var declarations
 - Add if expressions
@@ -29,6 +27,7 @@ also inspired by go/parser and text/template/parse.
 - Add datatypes
 - Add references and probably some for of gc
 - Add records or structs?
+- Add doc comment support to parsing
 - Add typing system(?) or go with dynamic typing
 - Add pattern matching(?)
 - Vendor dependencies(or remove them)

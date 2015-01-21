@@ -413,3 +413,51 @@ func TestStringLiterals(t *testing.T) {
 		}
 	}
 }
+
+func TestValVarAssignments(t *testing.T) {
+	input := `val a, b = 10, "big";
+var a
+val b = true`
+
+	lexer := Lex("TestValVarAssign", input)
+	var output []Token
+	expected := []Token{
+		Token{Typ: VAL, Val: "val"},
+		Token{Typ: IDENTIFIER, Val: "a"},
+		Token{Typ: COMMA, Val: ","},
+		Token{Typ: IDENTIFIER, Val: "b"},
+		Token{Typ: ASSIGN, Val: "="},
+		Token{Typ: INT, Val: "10"},
+		Token{Typ: COMMA, Val: ","},
+		Token{Typ: STRING, Val: "\"big\""},
+		Token{Typ: SEMICOLON, Val: ";"},
+		Token{Typ: NEWLINE, Val: "\n"},
+		Token{Typ: VAR, Val: "var"},
+		Token{Typ: IDENTIFIER, Val: "a"},
+		Token{Typ: NEWLINE, Val: "\n"},
+		Token{Typ: VAL, Val: "val"},
+		Token{Typ: IDENTIFIER, Val: "b"},
+		Token{Typ: ASSIGN, Val: "="},
+		Token{Typ: BOOL, Val: "true"},
+		Token{Typ: EOF, Val: ""},
+	}
+	for {
+		item := lexer.NextItem()
+		output = append(output, item)
+		//fmt.Printf("%s ", item)
+		if item.Typ == EOF || item.Typ == ERROR {
+			//fmt.Println()
+			break
+		}
+	}
+	if len(output) != len(expected) {
+		t.Errorf("\nExpected: %+v\n Got:     %+v\n", expected, output)
+	}
+	for i, item := range output {
+		if item.Typ != expected[i].Typ || item.Val != expected[i].Val {
+			// For more information add %#v e.g:
+			// t.Logf("\nExpected: %#v\n Got:     %#v\n", output, expected)
+			t.Errorf("\nExpected: %+v\n Got:     %+v\n", expected, output)
+		}
+	}
+}

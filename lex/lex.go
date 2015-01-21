@@ -135,8 +135,22 @@ func lexStart(l *Lexer) stateFn {
 		return nil
 	case r == ';':
 		return lexSemiColon
+	case r == ',':
+		l.emit(COMMA)
+		return lexStart
 	case r == '"':
 		return lexString
+	case r == '(':
+		l.emit(LEFTPAREN)
+		l.parenDepth++
+		return lexStart
+	case r == ')':
+		l.emit(RIGHTPAREN)
+		l.parenDepth--
+		if l.parenDepth < 0 {
+			return l.errorf("unexpected right paren at line %d:%d with %#U", l.lineNumber(), l.colNumber(), r)
+		}
+		return lexStart
 	case isSpace(r):
 		return lexSpace
 	case isEndOfLine(r):
@@ -150,17 +164,6 @@ func lexStart(l *Lexer) stateFn {
 	case isSpecialSym(r):
 		l.backup()
 		return lexOperator
-	case r == '(':
-		l.emit(LEFTPAREN)
-		l.parenDepth++
-		return lexStart
-	case r == ')':
-		l.emit(RIGHTPAREN)
-		l.parenDepth--
-		if l.parenDepth < 0 {
-			return l.errorf("unexpected right paren at line %d:%d with %#U", l.lineNumber(), l.colNumber(), r)
-		}
-		return lexStart
 	default:
 		return l.errorf("unknown syntax: %q", l.input[l.start:l.pos])
 	}
