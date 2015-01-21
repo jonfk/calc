@@ -38,6 +38,7 @@ also inspired by go/parser and text/template/parse.
 to disambiguate certain expressions.
 - Unary Expressions cannot span multiple lines
 - Binary Expressions can span multiple lines only if line ends with operator
+- Parenthesis allows expressions to span multiple lines until the parenthesis is closed
 - Operator precedence are left binding and as follows:
 
 ```

@@ -341,8 +341,7 @@ func TestMultiLineExprs(t *testing.T) {
 		`
 4+
 (4)
-         4+p*
-4
+         4+p*4
    ((100)/
 90);-aTest;
 (aoeu)/2222
@@ -423,6 +422,41 @@ func TestSimpleBoolExpr(t *testing.T) {
 				Op: lex.Token{Typ: lex.LAND, Val: "&&"},
 				Y:  &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "test"}},
 			},
+		},
+	}
+	expected := &ast.File{
+		List: nodeList,
+	}
+	if !ast.Equals(parser.File, expected) {
+		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
+	}
+}
+
+func TestMultiLineParenExpr(t *testing.T) {
+	input :=
+		`((10)
+*1
+/9)`
+	parser := Parse("TestMultiLineParenExpr", input)
+
+	output := parser.File
+	nodeList := []ast.Node{
+		&ast.ParenExpr{
+			Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+			Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
+			X: &ast.BinaryExpr{
+				X: &ast.BinaryExpr{
+					X: &ast.ParenExpr{
+						Lparen: lex.Token{Typ: lex.LEFTPAREN, Val: "("},
+						Rparen: lex.Token{Typ: lex.RIGHTPAREN, Val: ")"},
+						X:      &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "10"}},
+					},
+					Op: lex.Token{Typ: lex.MUL, Val: "*"},
+					Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "1"}},
+				},
+				Op: lex.Token{Typ: lex.QUO, Val: "/"},
+				Y:  &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "9"}}},
 		},
 	}
 	expected := &ast.File{

@@ -217,24 +217,21 @@ func parseStartExpr(p *Parser) ast.Expr {
 }
 
 func parseLiteralOrIdent(p *Parser, tree, last ast.Expr) ast.Expr {
-	mark := p.pos
-	switch t := p.nextNonNewline(); {
+	switch t := p.next(); {
 	case t.IsOperator():
 		oper := &ast.BinaryExpr{Op: t}
 		tree, _ = ast.InsertExpr(tree, oper)
 		return parseBinaryExpr(p, tree, oper)
+	case t.Typ == lex.NEWLINE && len(p.pDepth.Stack) > 0:
+		return parseLiteralOrIdent(p, tree, last)
+	case atTerminator(t):
+		return tree
+	case t.Typ == lex.RIGHTPAREN:
+		paren := p.pDepth.pop()
+		paren.Rparen = t
+		return parseParenExpr(p, tree, paren)
 	default:
-		p.pos = mark
-		t = p.next()
-		if atTerminator(t) {
-			return tree
-		} else if t.Typ == lex.RIGHTPAREN {
-			paren := p.pDepth.pop()
-			paren.Rparen = t
-			return parseParenExpr(p, tree, paren)
-		} else {
-			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
-		}
+		p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 	}
 	return nil
 }
@@ -299,6 +296,8 @@ func parseParenExpr(p *Parser, tree ast.Expr, last *ast.ParenExpr) ast.Expr {
 			paren := p.pDepth.pop()
 			paren.Rparen = t
 			return parseParenExpr(p, tree, paren)
+		case t.Typ == lex.NEWLINE && len(p.pDepth.Stack) > 0:
+			return parseParenExpr(p, tree, last)
 		case atTerminator(t):
 			return tree
 		default:
@@ -334,20 +333,7 @@ func parseUnaryExpr(p *Parser, tree ast.Expr, last *ast.UnaryExpr) ast.Expr {
 			p.errorf("Invalid unary expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t, p.name)
 		}
 	} else {
-		switch t := p.next(); {
-		case atTerminator(t):
-			return tree
-		case t.Typ == lex.RIGHTPAREN:
-			paren := p.pDepth.pop()
-			paren.Rparen = t
-			return parseParenExpr(p, tree, paren)
-		case t.IsOperator():
-			binary := &ast.BinaryExpr{Op: t}
-			tree, _ = ast.InsertExpr(tree, binary)
-			return parseBinaryExpr(p, tree, binary)
-		default:
-			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
-		}
+		p.errorf("Internal error in parseUnaryExpr at line %d in file : %s\n", p.lineNumber(), p.name)
 	}
 	return nil
 }
