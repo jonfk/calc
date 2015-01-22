@@ -247,16 +247,66 @@ func IsExported(name string) bool {
 func (id *Ident) IsExported() bool { return IsExported(id.Tok.Val) }
 
 // ----------------------------------------------------------------------------
+// Statements
+
+// A statement is represented by a tree consisting of one
+// or more of the following concrete statement nodes.
+//
+type (
+	// A BadStmt node is a placeholder for statements containing
+	// syntax errors for which no correct statement nodes can be
+	// created.
+	//
+	BadStmt struct {
+		From, To token.Pos // position range of bad statement
+	}
+
+	// A DeclStmt node represents a declaration in a statement list.
+	DeclStmt struct {
+		Decl Decl // *GenDecl with CONST, TYPE, or VAR token
+	}
+
+	// An ExprStmt node represents a (stand-alone) expression
+	// in a statement list.
+	//
+	ExprStmt struct {
+		X Expr // expression
+	}
+
+	// An AssignStmt node represents an assignment or
+	// a short variable declaration.
+	//
+	AssignStmt struct {
+		Lhs    []Expr
+		TokPos token.Pos   // position of Tok
+		Tok    token.Token // assignment token, DEFINE
+		Rhs    []Expr
+	}
+)
+
+// ----------------------------------------------------------------------------
 // Declarations
 
+// A declaration is represented by one of the following declaration nodes.
+//
 type (
-	// An Assign node represents an assignment expression.
-	Assign struct {
-		Let    lex.Token
-		Lhs    *Ident
-		Assign lex.Token
-		Rhs    Expr
-		EndTok lex.Token
+	// var and val declarations
+	GenDecl struct {
+		Doc    *CommentGroup // associated documentation; or nil
+		TokPos token.Pos     // position of Tok
+		Tok    token.Token   // IMPORT, CONST, TYPE, VAR
+		Lparen token.Pos     // position of '(', if any
+		Specs  []Spec
+		Rparen token.Pos // position of ')', if any
+	}
+
+	// A FuncDecl node represents a function declaration.
+	FuncDecl struct {
+		Doc  *CommentGroup // associated documentation; or nil
+		Recv *FieldList    // receiver (methods); or nil (functions)
+		Name *Ident        // function/method name
+		Type *FuncType     // function signature: parameters, results, and position of "func" keyword
+		Body *BlockStmt    // function body; or nil (forward declaration)
 	}
 )
 
