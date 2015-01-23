@@ -143,73 +143,65 @@ func unclosedParen(tree Expr) bool {
 // Compares values of nodes and not position
 // Used for testing
 func Equals(a, b Node) bool {
-	switch a.(type) {
+	switch av := a.(type) {
+	case *ExprStmt:
+		switch bv := b.(type) {
+		case *ExprStmt:
+			return Equals(av.X, bv.X)
+		}
 	case *Ident:
-		switch b.(type) {
+		switch bv := b.(type) {
 		case *Ident:
-			if b.(*Ident).Tok.Equals(a.(*Ident).Tok) {
+			if bv.Tok.Equals(av.Tok) {
 				return true
 			}
-			return false
-		default:
 			return false
 		}
 	case *BasicLit:
-		switch b.(type) {
+		switch bv := b.(type) {
 		case *BasicLit:
-			if b.(*BasicLit).Tok.Equals(a.(*BasicLit).Tok) {
+			if bv.Tok.Equals(av.Tok) {
 				return true
 			}
 			return false
-		default:
-			return false
 		}
 	case *ParenExpr:
-		switch b.(type) {
+		switch bv := b.(type) {
 		case *ParenExpr:
-			aP, bP := a.(*ParenExpr), b.(*ParenExpr)
-			return aP.Lparen.Equals(bP.Lparen) &&
-				aP.Rparen.Equals(bP.Rparen) &&
-				Equals(aP.X, bP.X)
-		default:
-			return false
+			return av.Lparen.Equals(bv.Lparen) &&
+				av.Rparen.Equals(bv.Rparen) &&
+				Equals(av.X, bv.X)
 		}
 	case *UnaryExpr:
-		switch b.(type) {
+		switch bv := b.(type) {
 		case *UnaryExpr:
-			return a.(*UnaryExpr).Op.Equals(b.(*UnaryExpr).Op) &&
-				Equals(a.(*UnaryExpr).X, b.(*UnaryExpr).X)
-		default:
-			return false
+			return av.Op.Equals(bv.Op) &&
+				Equals(av.X, bv.X)
 		}
 	case *BinaryExpr:
-		switch b.(type) {
+		switch bv := b.(type) {
 		case *BinaryExpr:
-			return a.(*BinaryExpr).Op.Equals(b.(*BinaryExpr).Op) &&
-				Equals(a.(*BinaryExpr).Y, b.(*BinaryExpr).Y) &&
-				Equals(a.(*BinaryExpr).X, b.(*BinaryExpr).X)
-		default:
-			return false
+			return av.Op.Equals(bv.Op) &&
+				Equals(av.Y, bv.Y) &&
+				Equals(av.X, bv.X)
 		}
 	case *File:
-		switch b.(type) {
+		switch bv := b.(type) {
 		case *File:
-			afile, bfile := a.(*File), b.(*File)
-			if len(afile.List) == len(bfile.List) {
-				for i := range afile.List {
-					if !Equals(afile.List[i], bfile.List[i]) {
+			if len(av.List) == len(bv.List) {
+				for i := range av.List {
+					if !Equals(av.List[i], bv.List[i]) {
 						return false
 					}
 				}
 				return true
 			}
 			return false
-		default:
-			return false
 		}
 	default:
 		return false
 	}
+	return false
 }
 
 func Sprint(n Node) string {

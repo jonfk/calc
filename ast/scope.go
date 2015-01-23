@@ -99,14 +99,17 @@ const (
 	Pkg                // package
 	Con                // constant
 	Typ                // type
-	Val                // variable
+	Val                // immutable variable val
+	Var                // mutable variable var
 	Fun                // function or method
 )
 
 var objKindStrings = [...]string{
 	Bad: "bad",
 	Pkg: "package",
+	Con: "constant",
 	Val: "val",
+	Var: "var",
 	Fun: "func",
 }
 

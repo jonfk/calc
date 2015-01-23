@@ -280,6 +280,21 @@ type (
 	}
 )
 
+func (s *BadStmt) Pos() lex.Pos    { return s.From.Pos }
+func (s *DeclStmt) Pos() lex.Pos   { return s.Decl.Pos() }
+func (s *ExprStmt) Pos() lex.Pos   { return s.X.Pos() }
+func (s *AssignStmt) Pos() lex.Pos { return s.Lhs.Pos() }
+
+func (s *BadStmt) End() lex.Pos    { return s.To.Pos }
+func (s *DeclStmt) End() lex.Pos   { return s.Decl.End() }
+func (s *ExprStmt) End() lex.Pos   { return s.X.End() }
+func (s *AssignStmt) End() lex.Pos { return s.Rhs.End() }
+
+func (*BadStmt) stmtNode()    {}
+func (*DeclStmt) stmtNode()   {}
+func (*ExprStmt) stmtNode()   {}
+func (*AssignStmt) stmtNode() {}
+
 // ----------------------------------------------------------------------------
 // Declarations
 
@@ -366,7 +381,7 @@ type File struct {
 	//Package    lex.Pos       // position of "package" keyword
 	//Name       *Ident          // package name
 	Scope *Scope // package scope (this file only)
-	List  []Node // list of nodes in file
+	List  []Stmt // list of nodes in file
 	// Block *BlockExpr // Expressions in this file
 	//Imports    []*ImportSpec   // imports in this file
 	Unresolved []*Ident        // unresolved identifiers in this file
