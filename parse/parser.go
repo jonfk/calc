@@ -71,8 +71,8 @@ func (p *Parser) nextNonNewline() lex.Token {
 
 // peek returns the k forward token in items but does not move the pos.
 func (p *Parser) peek(k int) lex.Token {
-	for (p.pos + k) >= len(p.Items) {
-		p.errorf("Internal error in peek(): parser.pos moving out of bounds of lexed tokens\n")
+	if p.pos+k >= len(p.Items) {
+		return p.Items[p.pos]
 	}
 	return p.Items[p.pos+k]
 }
@@ -121,6 +121,18 @@ func (p *Parser) expect(valid lex.TokenType) bool {
 func (p *Parser) lineNumber() int {
 	item := p.Items[p.pos]
 	return 1 + strings.Count(p.input[:item.Pos], "\n")
+}
+
+// colNumber reports which column on the current line we're on,
+// based on the position of the previous item returned by next
+func (p *Parser) colNumber() int {
+	ln := p.lineNumber()
+	lines := strings.SplitN(p.input, "\n", ln)
+	var total int
+	for i := range lines[:ln-1] {
+		total += len(lines[i])
+	}
+	return int(p.pos) - total - (ln - 1)
 }
 
 // lineNumber reports which line we're on, based a lex.Pos
@@ -174,27 +186,29 @@ func (p *Parser) run() {
 
 func parseFile(p *Parser) {
 	switch t := p.nextNonNewline(); {
+	case t.Typ == lex.IDENTIFIER && p.peek(1).Typ == lex.ASSIGN:
+		p.backup()
+		assignStmt := parseAssign(p)
+		p.File.List = append(p.File.List, assignStmt)
+		parseFile(p)
+		// parse assignment
 	case t.Typ == lex.IDENTIFIER || isLiteral(t) || t.Typ == lex.LEFTPAREN || isUnaryOp(t):
 		p.backup()
-		expr := parseStartExpr(p)
-		p.File.List = append(p.File.List, expr)
+		exprStmt := &ast.ExprStmt{X: parseStartExpr(p)}
+		p.File.List = append(p.File.List, exprStmt)
 		parseFile(p)
 	case t.Typ == lex.EOF:
 		return
-	// case t.Typ == lex.LET:
-	// 	assign := &ast.Assign{
-	// 		Let: t,
-	// 	}
-	// 	p.File.List = append(p.File.List, assign)
-	// 	p.lastNode = assign
-	// 	parseLet(p)
+	case t.Typ == lex.VAL || t.Typ == lex.VAR:
+		p.backup()
+		decl := parseVarValDecl(p)
+		declStmt := &ast.DeclStmt{Decl: decl}
+		p.File.List = append(p.File.List, declStmt)
+		// parse decl
 	default:
 		p.errorf("Invalid statement at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 	}
 }
-
-// parses a let expression according to the grammar rule:
-// let_expr ::= LET IDENTIFIER ASSIGN expr END
 
 func parseStartExpr(p *Parser) ast.Expr {
 	switch t := p.next(); {
@@ -278,12 +292,6 @@ func parseParenExpr(p *Parser, tree ast.Expr, last *ast.ParenExpr) ast.Expr {
 		}
 		// Closed non-empty paren expr
 		switch t := p.next(); {
-		case t.Typ == lex.IDENTIFIER:
-			p.errorf("Invalid paren expression closed expression followed by identifier at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
-			return nil
-		case t.Typ == lex.INT || t.Typ == lex.FLOAT:
-			p.errorf("Invalid paren expression closed expression followed by literal at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
-			return nil
 		case t.IsOperator():
 			binary := &ast.BinaryExpr{Op: t}
 			tree, _ = ast.InsertExpr(tree, binary)
@@ -301,7 +309,7 @@ func parseParenExpr(p *Parser, tree ast.Expr, last *ast.ParenExpr) ast.Expr {
 		case atTerminator(t):
 			return tree
 		default:
-			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
+			p.errorf("Invalid paren expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 		}
 	} else {
 		p.errorf("Internal error in parseParenExpr: at line %d:%d with token '%s' in file: %s\n", p.lineNumber(), p.lastToken.Pos, p.lastToken.Val, p.name)
@@ -358,11 +366,29 @@ func parseBinaryExpr(p *Parser, tree ast.Expr, last *ast.BinaryExpr) ast.Expr {
 			tree, _ = ast.InsertExpr(tree, paren)
 			return parseParenExpr(p, tree, paren)
 		default:
-			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %S\n", p.lineNumber(), t.Pos, t.Val, p.name)
+			p.errorf("Invalid expression at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 		}
 	} else {
 		p.errorf("Internal Error: Invalid parser state in parseBinaryExpr")
 		return nil
+	}
+	return nil
+}
+
+func parseVarValDecl(p *Parser) ast.Decl {
+	return nil
+}
+
+func parseAssign(p *Parser) ast.Stmt {
+	lhs := parseStartExpr(p)
+	p.backup()
+	switch t := p.next(); {
+	case t.Typ == lex.ASSIGN:
+		tok := t
+		rhs := parseStartExpr(p)
+		return &ast.AssignStmt{Lhs: lhs, Tok: tok, Rhs: rhs}
+	default:
+		p.errorf("Internal Error: Invalid parser state in parseAssign in line %d:%d with token '%s' in file: %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 	}
 	return nil
 }
@@ -389,7 +415,7 @@ func isLiteral(t lex.Token) bool {
 }
 
 func atTerminator(t lex.Token) bool {
-	if t.Typ == lex.NEWLINE || t.Typ == lex.SEMICOLON || t.Typ == lex.EOF || t.Typ == lex.THEN {
+	if t.Typ == lex.NEWLINE || t.Typ == lex.SEMICOLON || t.Typ == lex.EOF || t.Typ == lex.THEN || t.Typ == lex.ASSIGN {
 		return true
 	}
 	return false

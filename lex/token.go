@@ -75,15 +75,16 @@ const (
 	LAND // &&
 	LOR  // ||
 
-	EQL    // ==
-	LSS    // <
-	GTR    // >
-	ASSIGN // =
-	NOT    // !
+	EQL // ==
+	LSS // <
+	GTR // >
+	NOT // !
 
 	NEQ // !=
 	LEQ // <=
 	GEQ // >=
+
+	ASSIGN // = not a keyword or operator since it does not yield an expression
 )
 
 const eof = -1
@@ -159,7 +160,7 @@ func (tok Token) IsLiteral() bool {
 // IsOperator returns true for tokens corresponding to operators and
 // delimiters; it returns false otherwise.
 //
-func (tok Token) IsOperator() bool { return tok.Typ > OPERATOR }
+func (tok Token) IsOperator() bool { return tok.Typ > OPERATOR && tok.Typ != ASSIGN }
 
 // IsKeyword returns true for tokens corresponding to keywords;
 // it returns false otherwise.

@@ -144,11 +144,6 @@ func unclosedParen(tree Expr) bool {
 // Used for testing
 func Equals(a, b Node) bool {
 	switch av := a.(type) {
-	case *ExprStmt:
-		switch bv := b.(type) {
-		case *ExprStmt:
-			return Equals(av.X, bv.X)
-		}
 	case *Ident:
 		switch bv := b.(type) {
 		case *Ident:
@@ -185,6 +180,18 @@ func Equals(a, b Node) bool {
 				Equals(av.Y, bv.Y) &&
 				Equals(av.X, bv.X)
 		}
+	case *ExprStmt:
+		switch bv := b.(type) {
+		case *ExprStmt:
+			return Equals(av.X, bv.X)
+		}
+	case *AssignStmt:
+		switch bv := b.(type) {
+		case *AssignStmt:
+			return av.Tok.Equals(bv.Tok) &&
+				Equals(av.Lhs, bv.Lhs) &&
+				Equals(av.Rhs, bv.Rhs)
+		}
 	case *File:
 		switch bv := b.(type) {
 		case *File:
@@ -211,19 +218,23 @@ func Sprint(n Node) string {
 // sprintd print prints the node to standard output with the proper depth
 // helper function to improve formatting
 func sprintd(n Node, d int) string {
-	switch n.(type) {
+	switch nt := n.(type) {
 	case *Ident:
-		return n.(*Ident).String()
+		return nt.String()
 	case *BasicLit:
-		return n.(*BasicLit).String()
+		return nt.String()
 	case *ParenExpr:
-		return n.(*ParenExpr).StringDepth(d)
+		return nt.StringDepth(d)
 	case *UnaryExpr:
-		return n.(*UnaryExpr).StringDepth(d)
+		return nt.StringDepth(d)
 	case *BinaryExpr:
-		return n.(*BinaryExpr).StringDepth(d)
+		return nt.StringDepth(d)
+	case *ExprStmt:
+		return nt.String()
+	case *AssignStmt:
+		return nt.StringDepth(d)
 	case *File:
-		return n.(*File).String()
+		return nt.String()
 	case nil:
 		return "<nil>"
 	default:
@@ -255,6 +266,14 @@ func (n *UnaryExpr) String() string {
 func (n *BinaryExpr) String() string {
 	return n.StringDepth(0)
 	// return fmt.Sprintf("(BinaryExpr \n\tOp:%s \n\tX:%s \n\tY:%s)", n.Op, sprintd(n.X, 0), sprintd(n.Y, 0))
+}
+
+func (n *ExprStmt) String() string {
+	return Sprint(n.X)
+}
+
+func (n *AssignStmt) String() string {
+	return n.StringDepth(0)
 }
 
 func (n *File) String() string {
@@ -316,6 +335,34 @@ func (n *BinaryExpr) StringDepth(d int) string {
 	}
 	buffer.WriteString("Y: ")
 	buffer.WriteString(sprintd(n.Y, d+1))
+	buffer.WriteString(")")
+
+	return buffer.String()
+}
+
+func (n *AssignStmt) StringDepth(d int) string {
+	var buffer bytes.Buffer
+	buffer.WriteString("(AssignStmt ")
+	buffer.WriteString("\n")
+	for i := 0; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+
+	buffer.WriteString("Lhs: ")
+	buffer.WriteString(sprintd(n.Lhs, d+1))
+	buffer.WriteString("\n")
+	for i := 0; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+	buffer.WriteString("Tok: ")
+	buffer.WriteString(n.Tok.String())
+
+	buffer.WriteString("\n")
+	for i := 0; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+	buffer.WriteString("Rhs: ")
+	buffer.WriteString(sprintd(n.Rhs, d+1))
 	buffer.WriteString(")")
 
 	return buffer.String()

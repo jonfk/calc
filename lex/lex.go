@@ -90,7 +90,6 @@ func (l *Lexer) colNumber() int {
 	for i := range lines[:ln-1] {
 		total += len(lines[i])
 	}
-	fmt.Printf("pos : %d", l.pos)
 	return int(l.pos) - total - (ln - 1)
 }
 
