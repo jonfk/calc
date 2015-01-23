@@ -84,8 +84,8 @@ func NewObj(kind ObjKind, name string) *Object {
 // (obj.Decl may be nil or not correct).
 func (obj *Object) Pos() lex.Pos {
 	switch d := obj.Decl.(type) {
-	case *Assign:
-		return d.Lhs.Pos()
+	case *GenDecl:
+		return d.Pos()
 	}
 	return lex.NoPos
 }

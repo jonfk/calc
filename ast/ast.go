@@ -255,7 +255,7 @@ type (
 	// created.
 	//
 	BadStmt struct {
-		From, To token.Pos // position range of bad statement
+		From, To lex.Token // position range of bad statement
 	}
 
 	// A DeclStmt node represents a declaration in a statement list.
@@ -274,44 +274,81 @@ type (
 	// a short variable declaration.
 	//
 	AssignStmt struct {
-		Lhs    []Expr
-		TokPos token.Pos   // position of Tok
-		Tok    token.Token // assignment token, DEFINE
-		Rhs    []Expr
+		Lhs Expr
+		Tok lex.Token // assignment token, ASSIGN
+		Rhs Expr
 	}
 )
 
 // ----------------------------------------------------------------------------
 // Declarations
 
+// A Spec node represents a single (non-parenthesized) import,
+// constant, type, or variable declaration.
+//
+type (
+	// The Spec type stands for any of *ImportSpec, *ValueSpec, and *TypeSpec.
+	Spec interface {
+		Node
+		specNode()
+	}
+
+	// An ImportSpec node represents a single package import.
+	// ImportSpec struct {
+	// 	Doc     *CommentGroup // associated documentation; or nil
+	// 	Name    *Ident        // local package name (including "."); or nil
+	// 	Path    *BasicLit     // import path
+	// 	Comment *CommentGroup // line comments; or nil
+	// 	EndPos  token.Pos     // end of spec (overrides Path.Pos if nonzero)
+	// }
+
+	// A ValueSpec node represents a constant or variable declaration
+	// (ConstSpec or VarSpec production).
+	//
+	ValueSpec struct {
+		Doc     *CommentGroup // associated documentation; or nil
+		Name    *Ident        // value names (len(Names) > 0)
+		Type    Expr          // value type; or nil
+		Value   Expr          // initial values; or nil
+		Comment *CommentGroup // line comments; or nil
+	}
+)
+
+func (s *ValueSpec) Pos() lex.Pos { return s.Name.Pos() }
+func (s *ValueSpec) End() lex.Pos {
+	if s.Value != nil {
+		return s.Value.End()
+	}
+	if s.Type != nil {
+		return s.Type.End()
+	}
+	return s.Name.End()
+}
+func (*ValueSpec) specNode() {}
+
 // A declaration is represented by one of the following declaration nodes.
 //
 type (
 	// var and val declarations
 	GenDecl struct {
-		Doc    *CommentGroup // associated documentation; or nil
-		TokPos token.Pos     // position of Tok
-		Tok    token.Token   // IMPORT, CONST, TYPE, VAR
-		Lparen token.Pos     // position of '(', if any
-		Specs  []Spec
-		Rparen token.Pos // position of ')', if any
+		Doc  *CommentGroup // associated documentation; or nil
+		Tok  lex.Token     // VAR, VAL
+		Spec Spec
 	}
 
 	// A FuncDecl node represents a function declaration.
-	FuncDecl struct {
-		Doc  *CommentGroup // associated documentation; or nil
-		Recv *FieldList    // receiver (methods); or nil (functions)
-		Name *Ident        // function/method name
-		Type *FuncType     // function signature: parameters, results, and position of "func" keyword
-		Body *BlockStmt    // function body; or nil (forward declaration)
-	}
+	// FuncDecl struct {
+	// 	Doc  *CommentGroup // associated documentation; or nil
+	// 	Recv *FieldList    // receiver (methods); or nil (functions)
+	// 	Name *Ident        // function/method name
+	// 	Type *FuncType     // function signature: parameters, results, and position of "func" keyword
+	// 	Body *BlockStmt    // function body; or nil (forward declaration)
+	// }
 )
 
-func (x *Assign) Pos() lex.Pos { return x.Let.Pos }
-
-func (x *Assign) End() lex.Pos { return x.EndTok.Pos }
-
-func (*Assign) declNode() {}
+func (d *GenDecl) Pos() lex.Pos { return d.Tok.Pos }
+func (d *GenDecl) End() lex.Pos { return d.Spec.End() }
+func (d *GenDecl) declNode()    {}
 
 // ----------------------------------------------------------------------------
 // Files and packages

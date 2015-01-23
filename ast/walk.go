@@ -64,10 +64,6 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.X)
 		Walk(v, n.Y)
 
-	case *Assign:
-		Walk(v, n.Lhs)
-		Walk(v, n.Rhs)
-
 	case *BlockExpr:
 		walkExprList(v, n.List)
 
