@@ -28,14 +28,11 @@ type Decl interface {
 	declNode()
 }
 
-/*
 // All statement nodes implement the Stmt interface.
 type Stmt interface {
 	Node
 	stmtNode()
 }
-
-*/
 
 // ---------------------------------------------------------------------
 // Comments

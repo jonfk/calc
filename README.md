@@ -101,7 +101,7 @@ e.g 4+2/3 == 4 + (2/3)
 
     func_apcl = (IDENTIFIER | function ) , "(" , expr , { "," , expr } , ")"
 
-    ident_stmt = IDENTIFIER , { "," , IDENTIFIER }
+    ident_stmt = IDENTIFIER
 
     decl = val_decl
          | var_decl
@@ -110,7 +110,7 @@ e.g 4+2/3 == 4 + (2/3)
 
     var_decl = "var" , ident_stmt , "=" , expr
 
-    func_decl = "def" , IDENTIFIER , "(" , ident_stmt , ")" , "=" , expr , "end"
+    func_decl = "def" , IDENTIFIER , "(" , IDENTIFIER , { "," , IDENTIFIER } , ")" , "=" , expr , "end"
 
 
 ###Planned Extensions to grammar
