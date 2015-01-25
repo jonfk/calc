@@ -13,6 +13,8 @@ also inspired by go/parser and text/template/parse.
 
 ###TODO
 - Add more tests for parser
+- Test error cases for parser and lexer
+- Add better error messages to parser
 - Add support for val declarations
 - Add support for var declarations
 - Add if expressions
