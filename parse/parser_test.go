@@ -507,3 +507,35 @@ func TestSimpleAssignStmt(t *testing.T) {
 		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }
+
+func TestMultyAssignStmt(t *testing.T) {
+	input := `a = true;b=10;c=b`
+	parser := Parse("TestSimpleAssignStmt", input)
+
+	output := parser.File
+	stmtList := []ast.Stmt{
+		&ast.AssignStmt{
+			Lhs: &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "a"}},
+			Tok: lex.Token{Typ: lex.ASSIGN, Val: "="},
+			Rhs: &ast.BasicLit{Tok: lex.Token{Typ: lex.BOOL, Val: "true"}},
+		},
+		&ast.AssignStmt{
+			Lhs: &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "b"}},
+			Tok: lex.Token{Typ: lex.ASSIGN, Val: "="},
+			Rhs: &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "10"}},
+		},
+		&ast.AssignStmt{
+			Lhs: &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "c"}},
+			Tok: lex.Token{Typ: lex.ASSIGN, Val: "="},
+			Rhs: &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "b"}},
+		},
+	}
+	expected := &ast.File{
+		List: stmtList,
+	}
+
+	if !ast.Equals(parser.File, expected) {
+		//t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
+	}
+}
