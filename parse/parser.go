@@ -204,7 +204,6 @@ func parseFile(p *Parser) {
 		decl := parseVarValDecl(p)
 		declStmt := &ast.DeclStmt{Decl: decl}
 		p.File.List = append(p.File.List, declStmt)
-		// parse decl
 	default:
 		p.errorf("Invalid statement at line %d:%d with token '%s' in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
 	}
@@ -376,7 +375,29 @@ func parseBinaryExpr(p *Parser, tree ast.Expr, last *ast.BinaryExpr) ast.Expr {
 }
 
 func parseVarValDecl(p *Parser) ast.Decl {
-	return nil
+	gendecl := &ast.GenDecl{}
+	spec := &ast.ValueSpec{}
+	switch t := p.next(); {
+	case t.Typ == lex.VAR || t.Typ == lex.VAL:
+		gendecl.Tok = t
+	default:
+		p.errorf("Invalid Declaration statement at line %d:%d with token '%s', in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
+	}
+	switch t := p.next(); {
+	case t.Typ == lex.IDENTIFIER:
+		spec.Name = &ast.Ident{Tok: t}
+	default:
+		p.errorf("Invalid Declaration statement at line %d:%d with token '%s', in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
+	}
+	switch t := p.next(); {
+	case t.Typ == lex.ASSIGN:
+		// pass
+	default:
+		p.errorf("Invalid Declaration statement at line %d:%d with token '%s', in file : %s\n", p.lineNumber(), t.Pos, t.Val, p.name)
+	}
+	spec.Value = parseStartExpr(p)
+	gendecl.Spec = spec
+	return gendecl
 }
 
 func parseAssign(p *Parser) ast.Stmt {

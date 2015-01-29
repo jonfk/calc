@@ -2,7 +2,7 @@ package parse
 
 import (
 	// "fmt"
-	// "github.com/davecgh/go-spew/spew"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jonfk/calc/ast"
 	"github.com/jonfk/calc/lex"
 	"testing"
@@ -537,5 +537,31 @@ func TestMultyAssignStmt(t *testing.T) {
 	if !ast.Equals(parser.File, expected) {
 		//t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
 		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
+	}
+}
+
+func TestSimpleDeclStmt(t *testing.T) {
+	input := `var c = 9`
+	parser := Parse("TestSimpleDeclStmt", input)
+
+	output := parser.File
+	stmtList := []ast.Stmt{
+		&ast.DeclStmt{
+			Decl: &ast.GenDecl{
+				Tok: lex.Token{Typ: lex.VAR, Val: "var"},
+				Spec: &ast.ValueSpec{
+					Name:  &ast.Ident{Tok: lex.Token{Typ: lex.IDENTIFIER, Val: "c"}},
+					Value: &ast.BasicLit{Tok: lex.Token{Typ: lex.INT, Val: "9"}},
+				},
+			},
+		},
+	}
+	expected := &ast.File{
+		List: stmtList,
+	}
+
+	if !ast.Equals(parser.File, expected) {
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }

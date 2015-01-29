@@ -192,6 +192,23 @@ func Equals(a, b Node) bool {
 				Equals(av.Lhs, bv.Lhs) &&
 				Equals(av.Rhs, bv.Rhs)
 		}
+	case *DeclStmt:
+		switch bv := b.(type) {
+		case *DeclStmt:
+			return Equals(av.Decl, bv.Decl)
+		}
+	case *ValueSpec:
+		switch bv := b.(type) {
+		case *ValueSpec:
+			return Equals(av.Name, bv.Name) &&
+				Equals(av.Value, bv.Value)
+		}
+	case *GenDecl:
+		switch bv := b.(type) {
+		case *GenDecl:
+			return av.Tok.Equals(bv.Tok) &&
+				Equals(av.Spec, bv.Spec)
+		}
 	case *File:
 		switch bv := b.(type) {
 		case *File:
