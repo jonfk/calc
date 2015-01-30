@@ -250,6 +250,12 @@ func sprintd(n Node, d int) string {
 		return nt.String()
 	case *AssignStmt:
 		return nt.StringDepth(d)
+	case *DeclStmt:
+		return nt.StringDepth(d)
+	case *ValueSpec:
+		return nt.StringDepth(d)
+	case *GenDecl:
+		return nt.StringDepth(d)
 	case *File:
 		return nt.String()
 	case nil:
@@ -293,6 +299,18 @@ func (n *AssignStmt) String() string {
 	return n.StringDepth(0)
 }
 
+func (n *DeclStmt) String() string {
+	return n.StringDepth(0)
+}
+
+func (n *GenDecl) String() string {
+	return n.StringDepth(0)
+}
+
+func (n *ValueSpec) String() string {
+	return n.StringDepth(0)
+}
+
 func (n *File) String() string {
 	var buffer bytes.Buffer
 	buffer.WriteString("(File ")
@@ -300,6 +318,7 @@ func (n *File) String() string {
 		buffer.WriteString("\n\n")
 		buffer.WriteString(sprintd(node, 0))
 	}
+	buffer.WriteString(")")
 	return buffer.String()
 }
 
@@ -380,6 +399,47 @@ func (n *AssignStmt) StringDepth(d int) string {
 	}
 	buffer.WriteString("Rhs: ")
 	buffer.WriteString(sprintd(n.Rhs, d+1))
+	buffer.WriteString(")")
+
+	return buffer.String()
+}
+
+func (n *DeclStmt) StringDepth(d int) string {
+	return fmt.Sprintf("(DeclStmt %s)", sprintd(n.Decl, d+1))
+}
+
+func (n *ValueSpec) StringDepth(d int) string {
+	var buffer bytes.Buffer
+	buffer.WriteString("(ValueSpec ")
+
+	buffer.WriteString("\n")
+	for i := 0; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+	buffer.WriteString("Name: ")
+	buffer.WriteString(sprintd(n.Name, d+1))
+
+	buffer.WriteString("\n")
+	for i := 0; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+	buffer.WriteString("Value: ")
+	buffer.WriteString(sprintd(n.Value, d+1))
+	buffer.WriteString(")")
+
+	return buffer.String()
+}
+
+func (n *GenDecl) StringDepth(d int) string {
+	var buffer bytes.Buffer
+	buffer.WriteString("(GenDecl ")
+	buffer.WriteString(n.Tok.String())
+
+	buffer.WriteString("\n")
+	for i := 0; i < d; i++ {
+		buffer.WriteString("\t")
+	}
+	buffer.WriteString(sprintd(n.Spec, d+1))
 	buffer.WriteString(")")
 
 	return buffer.String()

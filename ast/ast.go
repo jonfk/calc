@@ -323,7 +323,7 @@ type (
 	ValueSpec struct {
 		Doc     *CommentGroup // associated documentation; or nil
 		Name    *Ident        // value names (len(Names) > 0)
-		Type    Expr          // value type; or nil
+		Type    Expr          // value type; or nil, !!!not used yet!!!
 		Value   Expr          // initial values; or nil
 		Comment *CommentGroup // line comments; or nil
 	}

@@ -2,7 +2,7 @@ package parse
 
 import (
 	// "fmt"
-	"github.com/davecgh/go-spew/spew"
+	// "github.com/davecgh/go-spew/spew"
 	"github.com/jonfk/calc/ast"
 	"github.com/jonfk/calc/lex"
 	"testing"
@@ -561,7 +561,7 @@ func TestSimpleDeclStmt(t *testing.T) {
 	}
 
 	if !ast.Equals(parser.File, expected) {
-		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
-		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
+		// t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", spew.Sdump(expected), spew.Sdump(output))
+		t.Errorf("\nExpected:\n%s\n\nGot:\n%s\n", expected.String(), output.String())
 	}
 }
